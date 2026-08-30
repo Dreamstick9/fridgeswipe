@@ -5,7 +5,8 @@
 // Providers: OpenAI primary when OPENAI_API_KEY is set (model auto-resolved, prefers "luna",
 // lowest reasoning effort), Groq gpt-oss-120b/20b (per-model rate buckets), NIM last resort.
 import http from 'node:http';
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { loadEnv, makeLLM } from '../src/llm.mjs';
@@ -192,6 +193,48 @@ async function visionAnalyze(dataB64, mediaType) {
   const j = JSON.parse(text);
   const out = extractJson(j.choices?.[0]?.message?.content ?? '{}');
   return (out.items ?? []).filter((i) => i?.name);
+}
+
+// ---------- dish images ----------
+// One generation per distinct dish, cached to disk; repeats and re-swipes are free.
+const IMG_DIR = path.join(DATA_DIR, 'img');
+mkdirSync(IMG_DIR, { recursive: true });
+const imgInflight = new Map();
+const IMG_MODEL = process.env.OPENAI_IMAGE_MODEL ?? 'gpt-image-1';
+const imgKey = (name) => createHash('sha1').update(norm(name)).digest('hex').slice(0, 16);
+
+async function dishImage(name, cuisine, uses) {
+  const key = imgKey(name);
+  const file = path.join(IMG_DIR, `${key}.png`);
+  if (existsSync(file)) return key;
+  if (imgInflight.has(key)) return imgInflight.get(key);
+  if (!process.env.OPENAI_API_KEY) throw new Error('no OPENAI_API_KEY for images');
+
+  const prompt = `Overhead editorial food photograph of "${name}"${cuisine ? `, ${cuisine}` : ''}, plated simply on a plain ceramic dish, set on a warm cream paper surface. Ingredients visible: ${(uses ?? []).slice(0, 6).join(', ') || 'seasonal'}. Soft natural window light, muted warm palette, shallow depth of field, minimal props, cookbook styling. No text, no words, no hands, no cutlery clutter.`;
+
+  const p = (async () => {
+    const res = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST', signal: AbortSignal.timeout(90000),
+      headers: { authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ model: IMG_MODEL, prompt, size: '1024x1024', quality: 'low', n: 1 }),
+    });
+    const text = await res.text();
+    if (!res.ok) throw new Error(`image ${res.status}: ${text.slice(0, 160)}`);
+    const j = JSON.parse(text);
+    const b64 = j.data?.[0]?.b64_json;
+    if (!b64) {
+      const url = j.data?.[0]?.url;
+      if (!url) throw new Error('image response had no data');
+      const bin = Buffer.from(await (await fetch(url, { signal: AbortSignal.timeout(30000) })).arrayBuffer());
+      writeFileSync(file, bin);
+      return key;
+    }
+    writeFileSync(file, Buffer.from(b64, 'base64'));
+    return key;
+  })().finally(() => imgInflight.delete(key));
+
+  imgInflight.set(key, p);
+  return p;
 }
 
 function mergeItems(lists) {
@@ -570,6 +613,18 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && /^\/(icon-192|icon-512|apple-touch-icon)\.png$/.test(url.pathname)) {
       res.writeHead(200, { 'content-type': 'image/png', 'cache-control': 'public, max-age=3600' });
       return res.end(readFileSync(path.join(ROOT, 'web', 'fridge', url.pathname.slice(1))));
+    }
+    if (req.method === 'POST' && url.pathname === '/api/dish-image') {
+      const { name, cuisine = '', uses = [] } = await readBody(req);
+      if (!name) return json(res, 400, { error: 'name required' });
+      const key = await dishImage(name, cuisine, (uses ?? []).map((u) => u?.item ?? u).filter(Boolean));
+      return json(res, 200, { url: `/img/${key}.png` });
+    }
+    if (req.method === 'GET' && /^\/img\/[0-9a-f]{16}\.png$/.test(url.pathname)) {
+      const file = path.join(IMG_DIR, path.basename(url.pathname));
+      if (!existsSync(file)) { res.writeHead(404); return res.end('no image'); }
+      res.writeHead(200, { 'content-type': 'image/png', 'cache-control': 'public, max-age=86400' });
+      return res.end(readFileSync(file));
     }
     if (req.method === 'GET' && url.pathname === '/api/taste') {
       const t = loadTaste();

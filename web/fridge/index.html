@@ -235,6 +235,15 @@ stamped-sheet deck.
     color: var(--ink-soft); margin-bottom: 8px; }
   .sheet-name { font: 520 clamp(24px, 6.4vw, 30px)/1.1 var(--serif); margin-bottom: 12px; }
   .sheet-rule { border-top: 1px solid var(--ink); margin-bottom: 10px; }
+  .sheet-figure { position: relative; width: 100%; aspect-ratio: 3 / 2; margin: 2px 0 12px;
+    flex: none; min-height: 120px;
+    background: var(--paper-deep); border: 1px solid var(--rule-faint); overflow: hidden; }
+  .sheet-figure img { width: 100%; height: 100%; object-fit: cover; display: block;
+    opacity: 0; transition: opacity .5s ease; }
+  .sheet-figure img.in { opacity: 1; }
+  .sheet-figure .figlab { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font: 500 9px/1 var(--sans); letter-spacing: .2em; text-transform: uppercase; color: var(--ink-soft); opacity: .55; }
+  .sheet-figure.done .figlab, .sheet-figure.failed { display: none; }
   .sheet-meta { font: 500 10.5px/1.7 var(--sans); letter-spacing: .12em; text-transform: uppercase;
     color: var(--ink); margin-bottom: 12px; }
   .sheet-meta .risk { color: var(--bordeaux); }
@@ -889,6 +898,7 @@ function renderDeck() {
       <p class="sheet-kick">${card.chef ? esc(card.chef) + ' · ' : ''}Proposta n° ${deckPos + 1 + depth}</p>
       <h3 class="sheet-name">${esc(card.name)}</h3>
       <div class="sheet-rule"></div>
+      <div class="sheet-figure"><span class="figlab">Il ritratto del piatto…</span></div>
       <p class="sheet-meta">${meta}</p>
       ${card.why_you ? `<p class="sheet-why">«${NBSP}${esc(card.why_you)}${NBSP}»</p>` : ''}
       <p class="sheet-lab">Dalla tua cucina · from your kitchen</p>
@@ -903,9 +913,40 @@ function renderDeck() {
       el.classList.toggle('peeking');
       e.target.textContent = el.classList.contains('peeking') ? 'Fold the method ▴' : 'The method ▾';
     };
-    if (isTop) attachSwipe(el, card);
+    if (isTop) { attachSwipe(el, card); loadDishImage(el.querySelector('.sheet-figure'), card); }
     wrap.appendChild(el);
   });
+  // warm only the next card's portrait — the stacked ones behind are barely visible
+  const nxt = deck[deckPos + 1];
+  if (nxt) fetchDishImage(nxt).catch(() => {});
+}
+
+// ---------- dish portraits ----------
+const imgCache = new Map();   // dish name → promise of url (server caches on disk too)
+function fetchDishImage(card) {
+  const k = card?.name;
+  if (!k) return Promise.reject();
+  if (!imgCache.has(k)) {
+    imgCache.set(k, fetch(api('/api/dish-image'), {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: card.name, cuisine: card.cuisine ?? '', uses: card.uses ?? [] }),
+    }).then(r => r.json()).then(j => {
+      if (!j.url) throw new Error(j.error ?? 'no image');
+      return API_BASE + j.url;
+    }));
+  }
+  return imgCache.get(k);
+}
+function loadDishImage(fig, card) {
+  if (!fig) return;
+  fetchDishImage(card).then((url) => {
+    if (!fig.isConnected) return;
+    const img = new Image();
+    img.alt = card.name ?? 'dish';
+    img.onload = () => { fig.classList.add('done'); fig.appendChild(img); requestAnimationFrame(() => img.classList.add('in')); };
+    img.onerror = () => fig.classList.add('failed');
+    img.src = url;
+  }).catch(() => fig.classList.add('failed'));
 }
 function attachSwipe(el, card) {
   let sx = 0, sy = 0, dx = 0, dragging = false;
