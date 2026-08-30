@@ -21,8 +21,11 @@
       },
       "backgroundColor": "#07070a",
       "permissions": [
-        "RECORD_AUDIO"
-      ]
+        "RECORD_AUDIO",
+        "READ_PHONE_STATE",
+        "POST_NOTIFICATIONS"
+      ],
+      "package": "com.dreamsticks.redflag"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -30,6 +33,13 @@
     "backgroundColor": "#07070a",
     "splash": {
       "backgroundColor": "#07070a"
-    }
+    },
+    "scheme": "redflag",
+    "extra": {
+      "eas": {
+        "projectId": "30d4a42a-5f6b-4709-baee-d33b1c58a364"
+      }
+    },
+    "owner": "dreamstick"
   }
 }

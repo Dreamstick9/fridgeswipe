@@ -4,11 +4,16 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, Pressable, Animated, StyleSheet, StatusBar, Platform, Easing,
+  PermissionsAndroid,
 } from 'react-native';
 import DEMO_EVENTS from './demoEvents.json';
 
 let useAudioPlayer = null, useAudioRecorder = null, RecordingPresets = null, requestRecordingPermissionsAsync = null;
 try { ({ useAudioPlayer, useAudioRecorder, RecordingPresets, requestRecordingPermissionsAsync } = require('expo-audio')); } catch {}
+let Notifications = null, Linking = null;
+try { Notifications = require('expo-notifications'); } catch {}
+try { Linking = require('expo-linking'); } catch {}
+import { shouldAutoArm, notificationFor, agentReducer, AGENT_LABELS } from './callFlow';
 
 const SHOW_VOICE = false;   // ElevenLabs intervention parked for now
 const LAN = '10.10.29.28';
@@ -150,6 +155,68 @@ export default function App() {
   const reset = () => { setFlags([]); setLines([]); setRisk({ score: 0, band: 'calm' }); setVerdict(null); setErr(null); };
 
   useEffect(() => { stageRef.current = stage; }, [stage]);
+  const [agents, setAgents] = useState({});
+
+  // Android runtime permissions the native receiver depends on. Without READ_PHONE_STATE
+  // the PHONE_STATE broadcast is never delivered to us — this request IS the feature.
+  useEffect(() => {
+    if (Platform.OS !== 'android' || !PermissionsAndroid?.requestMultiple) return;
+    (async () => {
+      try {
+        await PermissionsAndroid.requestMultiple([
+          PermissionsAndroid.PERMISSIONS.READ_PHONE_STATE,
+          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+        ].filter(Boolean));
+      } catch {}
+    })();
+  }, []);
+
+  // JS-side notifications (flags + verdict). The incoming-call notification itself is
+  // posted natively by the Kotlin receiver — it must work with JS asleep.
+  useEffect(() => {
+    if (!Notifications) return;
+    try {
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({ shouldShowAlert: true, shouldPlaySound: true, shouldSetBadge: false }),
+      });
+      Notifications.requestPermissionsAsync().catch(() => {});
+      Notifications.setNotificationChannelAsync?.('redflag-alerts', {
+        name: 'RED FLAG alerts', importance: Notifications.AndroidImportance?.MAX ?? 5,
+        sound: 'default', vibrationPattern: [0, 250, 150, 250],
+      }).catch(() => {});
+    } catch {}
+  }, []);
+
+  // Deep link from the native call receiver: redflag://arm -> arm instantly.
+  useEffect(() => {
+    if (!Linking) return;
+    let sub;
+    (async () => {
+      try {
+        const initial = await Linking.getInitialURL();
+        if (shouldAutoArm(initial) && stageRef.current === 'idle') arm();
+      } catch {}
+      try {
+        sub = Linking.addEventListener('url', ({ url }) => {
+          if (shouldAutoArm(url) && (stageRef.current === 'idle' || stageRef.current === 'armed')) {
+            if (stageRef.current === 'idle') arm();
+          }
+        });
+      } catch {}
+    })();
+    return () => { try { sub?.remove(); } catch {} };
+  }, []);
+
+  const notify = useCallback((ev) => {
+    const n = notificationFor(ev);
+    if (!n || !Notifications) return;
+    try {
+      Notifications.scheduleNotificationAsync({
+        content: { title: n.title, body: n.body, sound: 'default' },
+        trigger: null,
+      }).catch(() => {});
+    } catch {}
+  }, []);
 
   const apply = useCallback((ev) => {
     if (ev.type === 'transcript') {
@@ -160,11 +227,12 @@ export default function App() {
         setStage('incoming');
       }
     }
-    else if (ev.type === 'flag') setFlags((f) => (f.some((x) => x.technique === ev.flag.technique) ? f : [...f, ev.flag]));
+    else if (ev.type === 'flag') { setFlags((f) => (f.some((x) => x.technique === ev.flag.technique) ? f : [...f, ev.flag])); notify(ev); }
     else if (ev.type === 'risk') setRisk({ score: ev.score, band: ev.band });
-    else if (ev.type === 'verdict') { setVerdict(ev); setStage(ev.scam ? 'choose' : 'after'); }
+    else if (ev.type === 'agent') setAgents((a) => agentReducer(a, ev));
+    else if (ev.type === 'verdict') { setVerdict(ev); setStage(ev.scam ? 'choose' : 'after'); notify(ev); }
     else if (ev.type === 'error') setErr(ev.message);
-  }, []);
+  }, [notify]);
 
   const runReplay = () => {
     clearTimers(); reset(); setStage('listening');
@@ -262,6 +330,20 @@ export default function App() {
       </View>
 
       {busy && <RiskMeter score={risk.score} band={risk.band} />}
+      {stage === 'listening' && Object.keys(agents).length > 0 && (
+        <View style={styles.agentStrip}>
+          {Object.entries(AGENT_LABELS).map(([id, label]) => {
+            const a = agents[id];
+            const on = a?.status === 'running';
+            const done = a?.status === 'done';
+            return (
+              <View key={id} style={[styles.agentPill, on && styles.agentOn, done && styles.agentDone]}>
+                <Text style={[styles.agentText, (on || done) && styles.agentTextOn]}>{label}</Text>
+              </View>
+            );
+          })}
+        </View>
+      )}
 
       <ScrollView ref={scroller} style={styles.feed} contentContainerStyle={styles.feedInner}
         onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: true })}>
@@ -396,6 +478,12 @@ const styles = StyleSheet.create({
   brand: { color: '#f4f4f6', fontSize: 26, fontWeight: '800', letterSpacing: 3 },
   tagline: { color: '#5b6070', fontSize: 11, letterSpacing: 2, marginTop: 4, marginLeft: 18, textTransform: 'uppercase' },
 
+  agentStrip: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
+  agentPill: { borderWidth: 1, borderColor: '#23252e', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+  agentOn: { borderColor: '#e5a83b', backgroundColor: '#1c1608' },
+  agentDone: { borderColor: '#2c5f3f', backgroundColor: '#0d1810' },
+  agentText: { color: '#4a4d59', fontSize: 10, fontWeight: '800', letterSpacing: 1.2 },
+  agentTextOn: { color: '#c9cad4' },
   meterWrap: { marginBottom: 20 },
   meterTop: { flexDirection: 'row', alignItems: 'baseline', gap: 12 },
   meterScore: { fontSize: 58, fontWeight: '800', letterSpacing: -2 },
