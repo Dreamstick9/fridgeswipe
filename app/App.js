@@ -7,8 +7,8 @@ import {
 } from 'react-native';
 import DEMO_EVENTS from './demoEvents.json';
 
-let useAudioPlayer = null, useAudioRecorder = null, RecordingPresets = null, AudioModule = null;
-try { ({ useAudioPlayer, useAudioRecorder, RecordingPresets, AudioModule } = require('expo-audio')); } catch {}
+let useAudioPlayer = null, useAudioRecorder = null, RecordingPresets = null, requestRecordingPermissionsAsync = null;
+try { ({ useAudioPlayer, useAudioRecorder, RecordingPresets, requestRecordingPermissionsAsync } = require('expo-audio')); } catch {}
 
 const SHOW_VOICE = false;   // ElevenLabs intervention parked for now
 const LAN = '10.10.29.28';
@@ -119,9 +119,9 @@ export default function App() {
 
   // Live microphone: record ~4s chunks, transcribe on the server, feed the same pipeline.
   const micLoop = async (sock) => {
-    if (!recorder || !AudioModule) return;
+    if (!recorder || !requestRecordingPermissionsAsync) return;
     try {
-      const perm = await AudioModule.requestRecordingPermissionsAsync();
+      const perm = await requestRecordingPermissionsAsync();
       if (!perm.granted) { setErr('mic permission denied — offline replay'); runReplay(); return; }
     } catch { return; }
     liveLoop.current = true;
