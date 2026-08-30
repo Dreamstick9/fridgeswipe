@@ -1,13 +1,16 @@
 {
   "expo": {
-    "name": "app",
-    "slug": "app",
+    "name": "RED FLAG",
+    "slug": "red-flag",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "RED FLAG listens to the call on speaker to detect scam manipulation. Nothing is recorded or uploaded."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -15,10 +18,18 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+      },
+      "backgroundColor": "#07070a",
+      "permissions": [
+        "RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "backgroundColor": "#07070a",
+    "splash": {
+      "backgroundColor": "#07070a"
     }
   }
 }

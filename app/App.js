@@ -7,8 +7,8 @@ import {
 } from 'react-native';
 import DEMO_EVENTS from './demoEvents.json';
 
-let useAudioPlayer = null;
-try { ({ useAudioPlayer } = require('expo-audio')); } catch {}
+let useAudioPlayer = null, useAudioRecorder = null, RecordingPresets = null, AudioModule = null;
+try { ({ useAudioPlayer, useAudioRecorder, RecordingPresets, AudioModule } = require('expo-audio')); } catch {}
 
 const LAN = '10.10.29.28';
 const PORT = 8787;
@@ -108,6 +108,36 @@ export default function App() {
   const fade = useFade([stage]);
 
   const player = useAudioPlayer ? useAudioPlayer(require('./assets/audio/intervene.mp3')) : null;
+  const recorder = useAudioRecorder && RecordingPresets ? useAudioRecorder(RecordingPresets.HIGH_QUALITY) : null;
+  const liveLoop = useRef(false);
+  const callT0 = useRef(0);
+
+  // Live microphone: record ~4s chunks, transcribe on the server, feed the same pipeline.
+  const micLoop = async (sock) => {
+    if (!recorder || !AudioModule) return;
+    try {
+      const perm = await AudioModule.requestRecordingPermissionsAsync();
+      if (!perm.granted) { setErr('mic permission denied — offline replay'); runReplay(); return; }
+    } catch { return; }
+    liveLoop.current = true;
+    callT0.current = Date.now();
+    while (liveLoop.current && sock.readyState <= 1) {
+      try {
+        await recorder.prepareToRecordAsync();
+        recorder.record();
+        await new Promise((r) => setTimeout(r, 4000));
+        await recorder.stop();
+        const uri = recorder.uri;
+        if (!uri || !liveLoop.current) break;
+        const audio = await fetch(uri).then((r) => r.blob());
+        const res = await fetch(`http://${LAN}:${PORT}/transcribe`, { method: 'POST', body: audio });
+        const j = await res.json();
+        if (j.text && j.text.trim() && sock.readyState === 1) {
+          sock.send(JSON.stringify({ type: 'chunk', text: j.text.trim(), tMs: Date.now() - callT0.current }));
+        }
+      } catch { /* one bad chunk never kills the call */ }
+    }
+  };
 
   const clearTimers = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   const reset = () => { setFlags([]); setLines([]); setRisk({ score: 0, band: 'calm' }); setVerdict(null); setErr(null); };
@@ -132,11 +162,34 @@ export default function App() {
       const sock = new WebSocket(`ws://${LAN}:${PORT}`);
       ws.current = sock;
       sock.onmessage = (m) => { try { apply(JSON.parse(m.data)); } catch {} };
-      sock.onerror = () => setErr('server unreachable — running offline replay'); 
-    } catch { setErr('websocket unavailable'); }
+      sock.onerror = () => { liveLoop.current = false; setErr('server unreachable — offline replay'); runReplay(); };
+      sock.onopen = () => micLoop(sock);
+    } catch { runReplay(); }
+  };
+
+  // Answering YES prefers live analysis when the server is up, otherwise the offline replay.
+  const answerYes = async () => {
+    try {
+      const ctl = new AbortController();
+      const t = setTimeout(() => ctl.abort(), 800);
+      const r = await fetch(`http://${LAN}:${PORT}/health`, { signal: ctl.signal });
+      clearTimeout(t);
+      if (r.ok) return runLive();
+    } catch {}
+    runReplay();
   };
 
   const hangUp = () => {
+    // In a live call the first tap asks for the verdict; the socket's verdict event moves the stage on.
+    if (stage === 'listening' && ws.current && ws.current.readyState === 1 && liveLoop.current) {
+      liveLoop.current = false;
+      try { recorder?.stop(); } catch {}
+      try { ws.current.send(JSON.stringify({ type: 'end' })); } catch {}
+      timers.current.push(setTimeout(() => { if (ws.current) { try { ws.current.close(); } catch {} ws.current = null; setStage('idle'); } }, 8000));
+      return;
+    }
+    liveLoop.current = false;
+    try { recorder?.stop(); } catch {}
     clearTimers();
     if (ws.current) { try { ws.current.close(); } catch {} ws.current = null; }
     setStage('idle'); reset();
@@ -265,7 +318,7 @@ export default function App() {
       </ScrollView>
 
       {stage === 'incoming' ? (
-        <CallSheet onYes={() => (ws.current === null && err === null ? runReplay() : runReplay())} onNo={() => setStage('idle')} />
+        <CallSheet onYes={answerYes} onNo={() => setStage('idle')} />
       ) : (
         <Pressable
           onPress={() => (stage === 'idle' ? setStage('incoming') : hangUp())}
