@@ -200,7 +200,7 @@ async function visionAnalyze(dataB64, mediaType) {
 const IMG_DIR = path.join(DATA_DIR, 'img');
 mkdirSync(IMG_DIR, { recursive: true });
 const imgInflight = new Map();
-const IMG_MODEL = process.env.OPENAI_IMAGE_MODEL ?? 'gpt-image-1';
+const IMG_MODEL = process.env.OPENAI_IMAGE_MODEL ?? 'gpt-image-2';
 const imgKey = (name) => createHash('sha1').update(norm(name)).digest('hex').slice(0, 16);
 
 async function dishImage(name, cuisine, uses) {
