@@ -13,9 +13,11 @@ deep link redflag://arm → JS auto-arms. Dev-client APK profile first (JS itera
 - [x] P2 prebuild done; CallReceiver.kt posts natively on RINGING/OFFHOOK, cancels on IDLE; manifest verified
 - [x] P3 build submitted: id 96b1a49f-c29d-453c-bae1-206a499a3cd8
       logs: https://expo.dev/accounts/dreamstick/projects/red-flag/builds/96b1a49f-c29d-453c-bae1-206a499a3cd8
-- [ ] P4 (during queue) server: llmDetect -> runGraph 4-agent orchestration + 'agent' events
-- [ ] P5 tests: call-path with native mocked; smoke:realcall asserts specialist fan-out; suites green
-- [ ] P6 build delivered (URL+id here) ; Expo Go fallback re-verified
+- [x] P4 server runs 4-agent graph (live-verified: 3 specialists concurrent, skeptic, judge) + degrade path
+- [x] P5 43/43 offline; smoke:realcall PASS w/ fan-out assertion (3 concurrent); callflow tests 5/5
+- [x] P6 BUILD FINISHED
+      APK: https://expo.dev/artifacts/eas/ZA8ctkHNvQ2YLAT6MjSNWzqOXRpdbpJNMp9C95xCZI4.apk
+      build id: 96b1a49f-c29d-453c-bae1-206a499a3cd8 · Expo Go fallback verified (exposdk:54.0.0, bundle 200)
 - [ ] P7 independent review + re-review
 
 ## Evidence
