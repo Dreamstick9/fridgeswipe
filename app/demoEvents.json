@@ -6,6 +6,58 @@
     "final": true
   },
   {
+    "type": "agent",
+    "agent": "authority_agent",
+    "status": "running",
+    "tMs": 4885
+  },
+  {
+    "type": "agent",
+    "agent": "pressure_agent",
+    "status": "running",
+    "tMs": 4885
+  },
+  {
+    "type": "agent",
+    "agent": "money_agent",
+    "status": "running",
+    "tMs": 4885
+  },
+  {
+    "type": "agent",
+    "agent": "authority_agent",
+    "status": "done",
+    "ms": 800,
+    "tMs": 5135
+  },
+  {
+    "type": "agent",
+    "agent": "pressure_agent",
+    "status": "done",
+    "ms": 800,
+    "tMs": 5135
+  },
+  {
+    "type": "agent",
+    "agent": "money_agent",
+    "status": "done",
+    "ms": 800,
+    "tMs": 5135
+  },
+  {
+    "type": "agent",
+    "agent": "skeptic",
+    "status": "running",
+    "tMs": 5205
+  },
+  {
+    "type": "agent",
+    "agent": "skeptic",
+    "status": "done",
+    "ms": 200,
+    "tMs": 5335
+  },
+  {
     "type": "flag",
     "flag": {
       "id": "f1",
@@ -41,6 +93,58 @@
     "final": true
   },
   {
+    "type": "agent",
+    "agent": "authority_agent",
+    "status": "running",
+    "tMs": 18855
+  },
+  {
+    "type": "agent",
+    "agent": "pressure_agent",
+    "status": "running",
+    "tMs": 18855
+  },
+  {
+    "type": "agent",
+    "agent": "money_agent",
+    "status": "running",
+    "tMs": 18855
+  },
+  {
+    "type": "agent",
+    "agent": "authority_agent",
+    "status": "done",
+    "ms": 800,
+    "tMs": 19105
+  },
+  {
+    "type": "agent",
+    "agent": "pressure_agent",
+    "status": "done",
+    "ms": 800,
+    "tMs": 19105
+  },
+  {
+    "type": "agent",
+    "agent": "money_agent",
+    "status": "done",
+    "ms": 800,
+    "tMs": 19105
+  },
+  {
+    "type": "agent",
+    "agent": "skeptic",
+    "status": "running",
+    "tMs": 19175
+  },
+  {
+    "type": "agent",
+    "agent": "skeptic",
+    "status": "done",
+    "ms": 200,
+    "tMs": 19305
+  },
+  {
     "type": "flag",
     "flag": {
       "id": "f5",
@@ -62,6 +166,58 @@
     "tMs": 23650,
     "text": "This is a confidential judicial matter. You must not inform anyone, not even your family.",
     "final": true
+  },
+  {
+    "type": "agent",
+    "agent": "authority_agent",
+    "status": "running",
+    "tMs": 23750
+  },
+  {
+    "type": "agent",
+    "agent": "pressure_agent",
+    "status": "running",
+    "tMs": 23750
+  },
+  {
+    "type": "agent",
+    "agent": "money_agent",
+    "status": "running",
+    "tMs": 23750
+  },
+  {
+    "type": "agent",
+    "agent": "authority_agent",
+    "status": "done",
+    "ms": 800,
+    "tMs": 24000
+  },
+  {
+    "type": "agent",
+    "agent": "pressure_agent",
+    "status": "done",
+    "ms": 800,
+    "tMs": 24000
+  },
+  {
+    "type": "agent",
+    "agent": "money_agent",
+    "status": "done",
+    "ms": 800,
+    "tMs": 24000
+  },
+  {
+    "type": "agent",
+    "agent": "skeptic",
+    "status": "running",
+    "tMs": 24070
+  },
+  {
+    "type": "agent",
+    "agent": "skeptic",
+    "status": "done",
+    "ms": 200,
+    "tMs": 24200
   },
   {
     "type": "flag",
@@ -87,6 +243,58 @@
     "final": true
   },
   {
+    "type": "agent",
+    "agent": "authority_agent",
+    "status": "running",
+    "tMs": 28810
+  },
+  {
+    "type": "agent",
+    "agent": "pressure_agent",
+    "status": "running",
+    "tMs": 28810
+  },
+  {
+    "type": "agent",
+    "agent": "money_agent",
+    "status": "running",
+    "tMs": 28810
+  },
+  {
+    "type": "agent",
+    "agent": "authority_agent",
+    "status": "done",
+    "ms": 800,
+    "tMs": 29060
+  },
+  {
+    "type": "agent",
+    "agent": "pressure_agent",
+    "status": "done",
+    "ms": 800,
+    "tMs": 29060
+  },
+  {
+    "type": "agent",
+    "agent": "money_agent",
+    "status": "done",
+    "ms": 800,
+    "tMs": 29060
+  },
+  {
+    "type": "agent",
+    "agent": "skeptic",
+    "status": "running",
+    "tMs": 29130
+  },
+  {
+    "type": "agent",
+    "agent": "skeptic",
+    "status": "done",
+    "ms": 200,
+    "tMs": 29260
+  },
+  {
     "type": "flag",
     "flag": {
       "id": "f3",
@@ -110,6 +318,58 @@
     "final": true
   },
   {
+    "type": "agent",
+    "agent": "authority_agent",
+    "status": "running",
+    "tMs": 33100
+  },
+  {
+    "type": "agent",
+    "agent": "pressure_agent",
+    "status": "running",
+    "tMs": 33100
+  },
+  {
+    "type": "agent",
+    "agent": "money_agent",
+    "status": "running",
+    "tMs": 33100
+  },
+  {
+    "type": "agent",
+    "agent": "authority_agent",
+    "status": "done",
+    "ms": 800,
+    "tMs": 33350
+  },
+  {
+    "type": "agent",
+    "agent": "pressure_agent",
+    "status": "done",
+    "ms": 800,
+    "tMs": 33350
+  },
+  {
+    "type": "agent",
+    "agent": "money_agent",
+    "status": "done",
+    "ms": 800,
+    "tMs": 33350
+  },
+  {
+    "type": "agent",
+    "agent": "skeptic",
+    "status": "running",
+    "tMs": 33420
+  },
+  {
+    "type": "agent",
+    "agent": "skeptic",
+    "status": "done",
+    "ms": 200,
+    "tMs": 33550
+  },
+  {
     "type": "flag",
     "flag": {
       "id": "f4",
@@ -125,6 +385,19 @@
     "type": "risk",
     "score": 100,
     "band": "critical"
+  },
+  {
+    "type": "agent",
+    "agent": "ruling",
+    "status": "running",
+    "tMs": 33300
+  },
+  {
+    "type": "agent",
+    "agent": "ruling",
+    "status": "done",
+    "ms": 900,
+    "tMs": 34200
   },
   {
     "type": "verdict",

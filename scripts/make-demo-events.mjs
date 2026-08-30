@@ -21,6 +21,19 @@ for (const line of lines) {
   tMs += Math.max(2200, words.length * 55);          // realistic speaking pace
   events.push(assertEvent({ type: 'transcript', tMs, text: words, final: true }));
 
+  // stage the agent choreography on lines that will produce a flag
+  const willFlag = allFlags.some((f) => {
+    if (emitted.includes(f.id)) return false;
+    const norm2 = (x) => x.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+    return norm2(line).includes(norm2(f.quote));
+  });
+  if (willFlag) {
+    for (const a of ['authority_agent', 'pressure_agent', 'money_agent']) events.push({ ...assertEvent({ type: 'agent', agent: a, status: 'running' }), tMs: tMs + 100 });
+    for (const a of ['authority_agent', 'pressure_agent', 'money_agent']) events.push({ ...assertEvent({ type: 'agent', agent: a, status: 'done', ms: 800 }), tMs: tMs + 350 });
+    events.push({ ...assertEvent({ type: 'agent', agent: 'skeptic', status: 'running' }), tMs: tMs + 420 });
+    events.push({ ...assertEvent({ type: 'agent', agent: 'skeptic', status: 'done', ms: 200 }), tMs: tMs + 550 });
+  }
+
   // a flag surfaces on the line that actually contains its quote
   const norm = (s) => s.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
   for (const f of allFlags) {
@@ -33,6 +46,8 @@ for (const line of lines) {
   }
 }
 
+events.push({ ...assertEvent({ type: 'agent', agent: 'ruling', status: 'running' }), tMs: tMs + 300 });
+events.push({ ...assertEvent({ type: 'agent', agent: 'ruling', status: 'done', ms: 900 }), tMs: tMs + 1200 });
 const final = assess(allFlags);
 events.push(assertEvent({
   type: 'verdict', scam: final.scam, confidence: Math.min(0.99, final.score / 100),
