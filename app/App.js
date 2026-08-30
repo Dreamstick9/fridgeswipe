@@ -412,5 +412,5 @@ const styles = StyleSheet.create({
   err: { color: '#e5a83b', fontSize: 13, marginTop: 12 },
 
   button: { height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 30, borderWidth: 1.5 },
-  buttonText: { fontSize: 16, fontWeight: '800', letterSpacing: 3 },
+  buttonText: { fontSize: 16, fontWeight: '800', letterSpacing: 3, userSelect: 'none' },
 });

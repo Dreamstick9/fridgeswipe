@@ -164,6 +164,10 @@ export function startServer({ port = process.env.SERVER_PORT || DEFAULT_PORT, ll
   const startedAt = Date.now();
   const provider = llm?.kind ?? process.env.LLM_PROVIDER ?? 'groq';
   const httpServer = createHttpServer((req, res) => {
+    // CORS: lets the browser-based fallback client use the live pipeline too.
+    res.setHeader('access-control-allow-origin', '*');
+    res.setHeader('access-control-allow-methods', 'GET, POST, OPTIONS');
+    if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
     if (req.method === 'GET' && req.url === '/health') {
       res.writeHead(200, { 'content-type': 'application/json' });
       res.end(JSON.stringify({ ok: true, provider, uptimeS: Math.floor((Date.now() - startedAt) / 1000) }));
