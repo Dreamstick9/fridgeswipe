@@ -16,8 +16,16 @@ try { Linking = require('expo-linking'); } catch {}
 import { shouldAutoArm, notificationFor, agentReducer, AGENT_LABELS } from './callFlow';
 
 const SHOW_VOICE = false;   // ElevenLabs intervention parked for now
-const LAN = '10.10.29.28';
 const PORT = 8787;
+// The analysis server lives on the same machine as Metro — derive its host from
+// wherever this bundle was actually loaded, so changing networks needs no code edit.
+let LAN = '10.10.29.28';
+try {
+  const Constants = require('expo-constants').default;
+  const hostUri = Constants?.expoConfig?.hostUri ?? Constants?.manifest2?.extra?.expoGo?.debuggerHost ?? '';
+  const host = String(hostUri).split(':')[0];
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(host)) LAN = host;
+} catch {}
 const CALLER = '+91 98214 40071';
 
 const BAND = {
@@ -157,18 +165,42 @@ export default function App() {
   useEffect(() => { stageRef.current = stage; }, [stage]);
   const [agents, setAgents] = useState({});
 
-  // Android runtime permissions the native receiver depends on. Without READ_PHONE_STATE
-  // the PHONE_STATE broadcast is never delivered to us — this request IS the feature.
+  // Android runtime permissions the native receiver depends on. Requested SEQUENTIALLY —
+  // concurrent permission dialogs get silently auto-denied on Android.
+  const [diag, setDiag] = useState({ engine: '…', phone: '…', notif: '…', mic: '…' });
+
+  const refreshDiag = useCallback(async () => {
+    const d = { engine: 'native', phone: '?', notif: '?', mic: '?' };
+    try {
+      const Constants = require('expo-constants').default;
+      d.engine = Constants?.executionEnvironment === 'storeClient' ? 'EXPO GO (no call detection!)' : 'native';
+    } catch {}
+    if (Platform.OS === 'android' && PermissionsAndroid?.check) {
+      try { d.phone = (await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.READ_PHONE_STATE)) ? 'ok' : 'DENIED'; } catch {}
+      try { d.notif = PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS ? ((await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS)) ? 'ok' : 'DENIED') : 'n/a'; } catch {}
+      try { d.mic = (await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO)) ? 'ok' : 'not yet'; } catch {}
+    }
+    setDiag(d);
+  }, []);
+
   useEffect(() => {
-    if (Platform.OS !== 'android' || !PermissionsAndroid?.requestMultiple) return;
     (async () => {
-      try {
-        await PermissionsAndroid.requestMultiple([
-          PermissionsAndroid.PERMISSIONS.READ_PHONE_STATE,
-          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
-        ].filter(Boolean));
-      } catch {}
+      if (Platform.OS === 'android' && PermissionsAndroid?.request) {
+        try { await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_PHONE_STATE); } catch {}
+        try { if (PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS) await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS); } catch {}
+        try { await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO); } catch {}
+      }
+      await refreshDiag();
     })();
+  }, [refreshDiag]);
+
+  const testAlert = useCallback(() => {
+    try {
+      Notifications?.scheduleNotificationAsync({
+        content: { title: '📞 Incoming call detected', body: 'Want me to listen in? Tap, then put the call on speaker.', sound: 'default' },
+        trigger: Platform.OS === 'android' ? { channelId: 'redflag-alerts' } : null,
+      }).catch(() => {});
+    } catch {}
   }, []);
 
   // JS-side notifications (flags + verdict). The incoming-call notification itself is
@@ -179,7 +211,7 @@ export default function App() {
       Notifications.setNotificationHandler({
         handleNotification: async () => ({ shouldShowAlert: true, shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false }),
       });
-      Notifications.requestPermissionsAsync().catch(() => {});
+      setTimeout(() => Notifications.requestPermissionsAsync().catch(() => {}), 4000);
       Notifications.setNotificationChannelAsync?.('redflag-alerts', {
         name: 'RED FLAG alerts', importance: Notifications.AndroidImportance?.MAX ?? 5,
         sound: 'default', vibrationPattern: [0, 250, 150, 250],
@@ -387,6 +419,12 @@ export default function App() {
               happens — and quote their exact words back to you.
             </Text>
             <Text style={styles.emptyHint}>tap ARM before a risky call · long-press for demo replay</Text>
+            <View style={styles.diagBox}>
+              <Text style={styles.diagLine}>engine {diag.engine}   ·   phone {diag.phone}   ·   alerts {diag.notif}   ·   mic {diag.mic}</Text>
+              <Pressable onPress={() => { testAlert(); refreshDiag(); }} hitSlop={10}>
+                <Text style={styles.diagBtn}>▶ test the call notification</Text>
+              </Pressable>
+            </View>
           </Animated.View>
         )}
 
@@ -516,6 +554,9 @@ const styles = StyleSheet.create({
   emptyBig: { color: '#e8e8ec', fontSize: 27, fontWeight: '700', lineHeight: 34 },
   emptySub: { color: '#6b7080', fontSize: 15, lineHeight: 23, marginTop: 14 },
   emptyHint: { color: '#3c3e48', fontSize: 12, letterSpacing: 1.4, marginTop: 26, textTransform: 'uppercase' },
+  diagBox: { marginTop: 30, borderTopWidth: 1, borderTopColor: '#16171d', paddingTop: 14 },
+  diagLine: { color: '#4a4d59', fontSize: 12, lineHeight: 18 },
+  diagBtn: { color: '#8a8f9e', fontSize: 13, marginTop: 10, textDecorationLine: 'underline' },
 
   card: { backgroundColor: '#101117', borderLeftWidth: 3, borderLeftColor: '#ff2d2d', borderRadius: 8, padding: 15, marginBottom: 10 },
   cardHead: { flexDirection: 'row', alignItems: 'center', gap: 9 },
