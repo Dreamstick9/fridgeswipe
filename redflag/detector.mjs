@@ -76,7 +76,7 @@ export function normalizeFlags(flags) {
       id: mkId(), technique: f.technique, label: TECHNIQUES[f.technique].label,
       quote: String(f.quote).trim(),
       tMs: Number.isFinite(f.tMs) ? f.tMs : 0,
-      confidence: Math.max(0, Math.min(1, Number(f.confidence) ?? 0.6)),
+      confidence: Math.max(0, Math.min(1, Number(f.confidence ?? 0.6) || 0.6)),
       tier: 2,
     }));
 }
@@ -91,7 +91,7 @@ export function groundFlags(flags, text) {
       id: mkId(), technique: f.technique, label: TECHNIQUES[f.technique].label,
       quote: String(f.quote).trim(),
       tMs: Number.isFinite(f.tMs) ? f.tMs : 0,
-      confidence: Math.max(0, Math.min(1, Number(f.confidence) ?? 0.6)),
+      confidence: Math.max(0, Math.min(1, Number(f.confidence ?? 0.6) || 0.6)),
       tier: 2,
     }));
 }

@@ -64,7 +64,6 @@ test('a hallucinator that CORRECTS itself after the rejection note converges to 
     [{ technique: 'FAKE_AUTHORITY', quote: 'I am the King of Spain', confidence: 0.9 }],
     [{ technique: 'FAKE_AUTHORITY', quote: 'CBI Cyber Crime Branch Delhi', confidence: 0.95 }],
   ];
-  let call = 0;
   const transport = stubTransport({ costPerCall: 0.001, handlers: [
     { match: ({ system }) => /FAKE_AUTHORITY/.test(system), reply: ({ prompt }) => JSON.stringify({ flags: authorityReplies[/REJECTED/.test(prompt) ? 1 : 0] }) },
     { match: ({ system }) => /MANUFACTURED_URGENCY/.test(system), reply: () => JSON.stringify({ flags: [{ technique: 'ISOLATION_ORDER', quote: 'You must not inform anyone', confidence: 0.95 }] }) },
