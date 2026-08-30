@@ -12,6 +12,37 @@ loadEnv(join(dirname(fileURLToPath(import.meta.url)), '..', '.env'));
 import {
   assess, llmDetect, markerScan, mergeFlags, resetIds,
 } from '../redflag/detector.mjs';
+import { readFileSync } from 'node:fs';
+import { runGraph } from '../src/executor.mjs';
+import { createTrace } from '../src/trace.mjs';
+import { makeGraphNodes } from '../redflag/graph-nodes.mjs';
+
+const GRAPH_SPEC = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'redflag', 'graph.spec.json'), 'utf8'));
+const AGENT_NODES = new Set(['authority_agent', 'pressure_agent', 'money_agent', 'skeptic', 'ruling']);
+
+/** Wrap a trace so node lifecycle streams to the client as 'agent' events, live. */
+function liveTrace(onAgent) {
+  const t = createTrace({ name: 'redflag-window' });
+  const started = new Map();
+  const origStart = t.nodeStart, origEnd = t.nodeEnd, origErr = t.nodeError;
+  t.nodeStart = (id, kind, it) => { if (AGENT_NODES.has(id)) { started.set(id, Date.now()); onAgent({ type: 'agent', agent: id, status: 'running' }); } return origStart(id, kind, it); };
+  t.nodeEnd = (id, x) => { if (AGENT_NODES.has(id)) onAgent({ type: 'agent', agent: id, status: 'done', ms: Date.now() - (started.get(id) ?? Date.now()) }); return origEnd(id, x); };
+  t.nodeError = (id, m) => { if (AGENT_NODES.has(id)) onAgent({ type: 'agent', agent: id, status: 'error' }); return origErr(id, m); };
+  return t;
+}
+
+/** One multi-agent pass over the rolling window. Returns tier-2 flags from the judge. */
+async function graphDetect(model, window, { onAgent }) {
+  const result = await runGraph(GRAPH_SPEC, {
+    nodeImpls: makeGraphNodes(),
+    transport: model,
+    input: { window },
+    trace: liveTrace(onAgent),
+  });
+  if (result.status !== 'ok') throw new Error(`graph ${result.status}`);
+  const flags = (result.state.verdict?.flags ?? []).map((f) => ({ ...f, tier: 2 }));
+  return { flags };
+}
 
 const DEFAULT_PORT = 8787;
 const WINDOW_CHARS = 900;
@@ -86,10 +117,20 @@ function setupConnection(ws, { llm, llmFactory }) {
           session.llmDirty = false;
           const window = session.transcript.slice(-WINDOW_CHARS);
           try {
-            const result = await llmDetect(model, window, {
-              tMs: session.lastTMs,
-              signal: AbortSignal.timeout(LLM_TIMEOUT_MS),
-            });
+            let result;
+            try {
+              result = await graphDetect(model, window, {
+                onAgent: (ev) => sendEvent(ws, ev),
+              });
+              result.flags = result.flags.map((f) => ({ ...f, tMs: session.lastTMs }));
+            } catch (graphErr) {
+              // graph pass failed (caps, provider hiccup) — degrade to the single-call detector
+              sendEvent(ws, { type: 'error', message: `graph degraded: ${String(graphErr.message).slice(0, 80)}` });
+              result = await llmDetect(model, window, {
+                tMs: session.lastTMs,
+                signal: AbortSignal.timeout(LLM_TIMEOUT_MS),
+              });
+            }
             const before = new Set(session.flags.filter((f) => f.tier === 2).map((f) => f.technique));
             session.flags = mergeFlags(session.flags, result.flags);
             for (const flag of session.flags) {

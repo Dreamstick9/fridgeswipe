@@ -36,6 +36,9 @@ export function validateEvent(ev) {
               ...(inRange(ev.confidence, 0, 1) ? [] : ['verdict.confidence must be 0..1']),
               ...(isStr(ev.headline) ? [] : ['verdict.headline required']),
               ...(Array.isArray(ev.advice) ? [] : ['verdict.advice must be an array'])];
+    case 'agent':
+      return [...(isStr(ev.agent) ? [] : ['agent.agent required']),
+              ...(['running', 'done', 'error'].includes(ev.status) ? [] : ['agent.status must be running|done|error'])];
     case 'error': return isStr(ev.message) ? [] : ['error.message required'];
     default: return [`unknown event type ${JSON.stringify(ev.type)}`];
   }

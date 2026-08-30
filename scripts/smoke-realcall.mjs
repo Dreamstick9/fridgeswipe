@@ -8,6 +8,8 @@ import WebSocket from 'ws';
 import { validateEvent } from '../src/contract.mjs';
 import { startServer } from '../server/server.mjs';
 
+const REQUIRED_AGENTS = ['authority_agent', 'pressure_agent', 'money_agent', 'skeptic', 'ruling'];
+
 const UTTERANCES = [
   'This is Inspector Sharma from the C B I cyber cell. A parcel with drugs was found in your name.',
   'You are under digital arrest. Do not tell your family or anyone about this call.',
@@ -104,7 +106,17 @@ try {
       : event.type === 'transcript' ? event.tMs : '-';
     console.log(`${String(tMs).padStart(5)}ms  ${event.type.padEnd(10)}  ${technique}`);
   }
-  console.log('PASS smoke-realcall');
+  {
+  const agentDone = new Set(events.filter((e) => e.type === 'agent' && e.status === 'done').map((e) => e.agent));
+  const missing = REQUIRED_AGENTS.filter((a) => !agentDone.has(a));
+  if (missing.length) throw new Error(`multi-agent evidence missing: ${missing.join(', ')} never completed`);
+  const running = events.filter((e) => e.type === 'agent' && e.status === 'running').map((e) => e.agent);
+  const firstDoneIdx = events.findIndex((e) => e.type === 'agent' && e.status === 'done');
+  const runningBeforeFirstDone = new Set(events.slice(0, firstDoneIdx).filter((e) => e.type === 'agent' && e.status === 'running').map((e) => e.agent));
+  if (runningBeforeFirstDone.size < 3) throw new Error(`specialists did not fan out in parallel (only ${[...runningBeforeFirstDone].join(', ')} running before first completion)`);
+  console.log(`agents verified: ${[...agentDone].join(', ')} (${runningBeforeFirstDone.size} concurrent)`);
+}
+console.log('PASS smoke-realcall');
 } catch (error) {
   console.error(`FAIL smoke-realcall: ${error.message}`);
   process.exitCode = 1;
