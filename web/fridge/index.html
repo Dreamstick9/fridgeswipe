@@ -351,6 +351,7 @@ stamped-sheet deck.
       <button class="btn" id="analyzeBtn" disabled>Analyze my kitchen</button>
     </div>
     <input type="file" id="file" accept="image/*" capture="environment" multiple hidden>
+    <input type="file" id="fileGal" accept="image/*" multiple hidden>
   </section>
 
   <!-- 2 · analyzing -->
@@ -540,7 +541,7 @@ function feedLine(feedEl, html, cls = '', pending = false) {
 const stopDots = (ln) => ln?.querySelector('.dots')?.remove();
 
 // ---------- capture ----------
-$('#file').onchange = async (e) => {
+const onPick = async (e) => {
   for (const f of e.target.files) {
     const dataUrl = await compress(f);
     photos.push({ dataUrl, b64: dataUrl.split(',')[1] });
@@ -548,6 +549,8 @@ $('#file').onchange = async (e) => {
   e.target.value = '';
   renderThumbs();
 };
+$('#file').onchange = onPick;
+$('#fileGal').onchange = onPick;
 function renderThumbs() {
   const wrap = $('#thumbs');
   wrap.innerHTML = '';
@@ -558,11 +561,16 @@ function renderThumbs() {
     d.querySelector('.rm').onclick = () => { photos.splice(i, 1); renderThumbs(); };
     wrap.appendChild(d);
   });
-  const add = document.createElement('button');
-  add.className = 'addph';
-  add.innerHTML = '<span class="plus">+</span><span class="micro">Aggiungi</span>';
-  add.onclick = () => $('#file').click();
-  wrap.appendChild(add);
+  const cam = document.createElement('button');
+  cam.className = 'addph';
+  cam.innerHTML = '<span class="plus">+</span><span class="micro">Camera</span>';
+  cam.onclick = () => $('#file').click();
+  wrap.appendChild(cam);
+  const gal = document.createElement('button');
+  gal.className = 'addph';
+  gal.innerHTML = '<span class="plus">▤</span><span class="micro">Gallery</span>';
+  gal.onclick = () => $('#fileGal').click();
+  wrap.appendChild(gal);
   $('#cloche').style.display = photos.length ? 'none' : '';
   $('#analyzeBtn').disabled = !photos.length;
 }
