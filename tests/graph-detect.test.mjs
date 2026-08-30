@@ -47,16 +47,36 @@ test('a single weak signal is NOT enough to accuse someone', async () => {
   assert.equal(r.state.verdict.scam, false, 'one technique alone must stay below the accusation threshold');
 });
 
-test('the skeptic rejects hallucinated evidence and forces a re-run', async () => {
+test('a PERSISTENT hallucinator is rejected, looped back, then halted by the cap', async () => {
   const r = await runGraph(spec, {
     nodeImpls: makeGraphNodes(),
     transport: stub({ authority: [{ technique: 'FAKE_AUTHORITY', quote: 'I am the King of Spain', confidence: 0.9 }] }),
     input: { window: scam.text },
   });
-  // groundFlags drops the fabricated quote before the skeptic ever sees it
-  assert.equal(r.state.allFlags.length, 0, 'fabricated evidence must not survive grounding');
-  assert.equal(r.state.audit.passed, true);
-  assert.equal(r.state.verdict.scam, false, 'no real evidence means no accusation');
+  assert.match(r.status, /^halted:cap:maxLoopBacks/, 'endless fabrication must hit the loop cap, not produce a verdict');
+  const loops = r.trace.events.filter((e) => e.type === 'loop-back');
+  assert.ok(loops.length >= 1, 'the skeptic rejection must actually fire the loop-back');
+  assert.equal(r.state.audit.passed, false, 'the audit must have rejected the fabricated quote');
+});
+
+test('a hallucinator that CORRECTS itself after the rejection note converges to a verdict', async () => {
+  const authorityReplies = [
+    [{ technique: 'FAKE_AUTHORITY', quote: 'I am the King of Spain', confidence: 0.9 }],
+    [{ technique: 'FAKE_AUTHORITY', quote: 'CBI Cyber Crime Branch Delhi', confidence: 0.95 }],
+  ];
+  let call = 0;
+  const transport = stubTransport({ costPerCall: 0.001, handlers: [
+    { match: ({ system }) => /FAKE_AUTHORITY/.test(system), reply: ({ prompt }) => JSON.stringify({ flags: authorityReplies[/REJECTED/.test(prompt) ? 1 : 0] }) },
+    { match: ({ system }) => /MANUFACTURED_URGENCY/.test(system), reply: () => JSON.stringify({ flags: [{ technique: 'ISOLATION_ORDER', quote: 'You must not inform anyone', confidence: 0.95 }] }) },
+    { match: ({ system }) => /EXTRACTION/.test(system), reply: () => JSON.stringify({ flags: [{ technique: 'EXTRACTION', quote: 'transfer your balance to the RBI supervision account', confidence: 0.9 }] }) },
+    { match: /.*/, reply: () => JSON.stringify({ flags: [] }) },
+  ]});
+  const r = await runGraph(spec, { nodeImpls: makeGraphNodes(), transport, input: { window: scam.text } });
+  assert.equal(r.status, 'ok', 'the corrected round must complete');
+  assert.ok(r.trace.events.some((e) => e.type === 'loop-back'), 'first round must have been rejected');
+  assert.equal(r.state.audit.passed, true, 'second round must pass the audit');
+  assert.equal(r.state.verdict.scam, true);
+  assert.ok(r.state.verdict.techniques.includes('FAKE_AUTHORITY'), 'the corrected quote must survive');
 });
 
 test('a genuine police call produces no verdict of scam', async () => {

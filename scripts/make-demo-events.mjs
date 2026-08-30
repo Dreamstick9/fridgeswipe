@@ -40,22 +40,22 @@ for (const line of lines) {
     if (emitted.includes(f.id)) continue;
     if (!norm(line).includes(norm(f.quote))) continue;
     emitted.push(f.id);
-    events.push(assertEvent({ type: 'flag', flag: { ...f, tMs: tMs + 600 } }));
+    events.push({ ...assertEvent({ type: 'flag', flag: { ...f, tMs: tMs + 600 } }), tMs: tMs + 600 });
     const score = assess(allFlags.filter((x) => emitted.includes(x.id))).score;
-    events.push(assertEvent({ type: 'risk', score, band: bandFor(score) }));
+    events.push({ ...assertEvent({ type: 'risk', score, band: bandFor(score) }), tMs: tMs + 700 });
   }
 }
 
 events.push({ ...assertEvent({ type: 'agent', agent: 'ruling', status: 'running' }), tMs: tMs + 300 });
 events.push({ ...assertEvent({ type: 'agent', agent: 'ruling', status: 'done', ms: 900 }), tMs: tMs + 1200 });
 const final = assess(allFlags);
-events.push(assertEvent({
+events.push({ ...assertEvent({
   type: 'verdict', scam: final.scam, confidence: Math.min(0.99, final.score / 100),
   headline: `DIGITAL ARREST SCAM — ${final.score}% RISK`,
   advice: ['Hang up now', '"Digital arrest" does not exist in Indian law',
            'No agency asks you to transfer money to prove it is clean', 'Call 1930 — cybercrime helpline'],
   techniques: final.techniques,
-}));
+}), tMs: tMs + 2600 });
 
 writeFileSync('redflag/fixtures/demo-events.json', JSON.stringify(events, null, 2));
 console.log(`✓ ${events.length} events · ${allFlags.length} flags · final score ${final.score} (${final.band})`);

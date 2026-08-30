@@ -66,6 +66,21 @@ RULES:
 - If the call is genuinely legitimate, reply {"flags":[]}.
 - Output the JSON object only. No prose, no markdown fence.`;
 
+/** Shape-normalise model flags WITHOUT the quote-grounding check — the multi-agent
+ *  skeptic performs grounding as its own adversarial step. */
+export function normalizeFlags(flags) {
+  return flags
+    .filter((f) => f && TECHNIQUE_IDS.includes(f.technique))
+    .filter((f) => typeof f.quote === 'string' && f.quote.length > 3)
+    .map((f) => ({
+      id: mkId(), technique: f.technique, label: TECHNIQUES[f.technique].label,
+      quote: String(f.quote).trim(),
+      tMs: Number.isFinite(f.tMs) ? f.tMs : 0,
+      confidence: Math.max(0, Math.min(1, Number(f.confidence) ?? 0.6)),
+      tier: 2,
+    }));
+}
+
 /** Drop anything the model did not actually read in the transcript. */
 export function groundFlags(flags, text) {
   const hay = norm(text);

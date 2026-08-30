@@ -3,7 +3,7 @@
 // specialists cost the same wall-clock as one generalist.
 
 import { TECHNIQUES } from './taxonomy.mjs';
-import { groundFlags, resetIds } from './detector.mjs';
+import { groundFlags, normalizeFlags, resetIds } from './detector.mjs';
 import { extractJson } from '../src/transport.mjs';
 import { scoreFlags, bandFor } from '../src/contract.mjs';
 import { SCAM_THRESHOLD } from './detector.mjs';
@@ -26,7 +26,9 @@ const specialist = (owned, field) => async ({ state, ask }) => {
   const { text } = await ask(`TRANSCRIPT:\n${state.brief.window}${retryNote}`, BASE(owned));
   let flags = [];
   try { flags = extractJson(text).flags ?? []; } catch { flags = []; }
-  return { writes: { [field]: groundFlags(flags, state.brief.window) } };
+  // Raw claims go forward — the SKEPTIC is the grounding authority. If it rejects,
+  // the bench loops the specialists back with the rejection note (bounded by caps).
+  return { writes: { [field]: normalizeFlags(flags) } };
 };
 
 export function makeGraphNodes() {
@@ -60,7 +62,8 @@ export function makeGraphNodes() {
     bench: async () => ({ writes: {} }),
 
     ruling: async ({ state }) => {
-      const survivors = (state.allFlags ?? []).filter((f) => !(state.audit?.rejected ?? []).some((r) => r.startsWith(f.technique)));
+      const rejectedTechs = new Set((state.audit?.rejected ?? []).map((r) => String(r).split(':')[0]));
+      const survivors = (state.allFlags ?? []).filter((f) => !rejectedTechs.has(f.technique));
       const score = scoreFlags(survivors);
       const scam = score >= SCAM_THRESHOLD;
       return { writes: { verdict: {

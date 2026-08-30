@@ -147,7 +147,7 @@ export default function App() {
         if (j.text && j.text.trim() && sock.readyState === 1) {
           sock.send(JSON.stringify({ type: 'chunk', text: j.text.trim(), tMs: Date.now() - callT0.current }));
         }
-      } catch { /* one bad chunk never kills the call */ }
+      } catch { await new Promise((r) => setTimeout(r, 1500)); /* one bad chunk never kills the call */ }
     }
   };
 
@@ -177,7 +177,7 @@ export default function App() {
     if (!Notifications) return;
     try {
       Notifications.setNotificationHandler({
-        handleNotification: async () => ({ shouldShowAlert: true, shouldPlaySound: true, shouldSetBadge: false }),
+        handleNotification: async () => ({ shouldShowAlert: true, shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false }),
       });
       Notifications.requestPermissionsAsync().catch(() => {});
       Notifications.setNotificationChannelAsync?.('redflag-alerts', {
@@ -213,7 +213,7 @@ export default function App() {
     try {
       Notifications.scheduleNotificationAsync({
         content: { title: n.title, body: n.body, sound: 'default' },
-        trigger: null,
+        trigger: Platform.OS === 'android' ? { channelId: 'redflag-alerts' } : null,
       }).catch(() => {});
     } catch {}
   }, []);
@@ -227,7 +227,15 @@ export default function App() {
         setStage('incoming');
       }
     }
-    else if (ev.type === 'flag') { setFlags((f) => (f.some((x) => x.technique === ev.flag.technique) ? f : [...f, ev.flag])); notify(ev); }
+    else if (ev.type === 'flag') {
+      setFlags((f) => {
+        const i = f.findIndex((x) => x.technique === ev.flag.technique);
+        if (i === -1) return [...f, ev.flag];
+        if ((ev.flag.tier ?? 1) > (f[i].tier ?? 1)) { const g = [...f]; g[i] = ev.flag; return g; }
+        return f;
+      });
+      notify(ev);
+    }
     else if (ev.type === 'risk') setRisk({ score: ev.score, band: ev.band });
     else if (ev.type === 'agent') setAgents((a) => agentReducer(a, ev));
     else if (ev.type === 'verdict') { setVerdict(ev); setStage(ev.scam ? 'choose' : 'after'); notify(ev); }
@@ -236,11 +244,17 @@ export default function App() {
 
   const runReplay = () => {
     clearTimers(); reset(); setStage('listening');
-    const t0 = DEMO_EVENTS[0]?.tMs ?? 0;
-    DEMO_EVENTS.forEach((ev) => timers.current.push(setTimeout(() => apply(ev), Math.max(0, (ev.tMs ?? t0) - t0))));
+    const t0 = DEMO_EVENTS.find((e) => Number.isFinite(e.tMs))?.tMs ?? 0;
+    let last = t0;
+    DEMO_EVENTS.forEach((ev) => {
+      const at = Number.isFinite(ev.tMs) ? ev.tMs : Number.isFinite(ev.flag?.tMs) ? ev.flag.tMs : last + 400;
+      last = Math.max(last, at);
+      timers.current.push(setTimeout(() => apply(ev), Math.max(0, at - t0)));
+    });
   };
 
   const arm = () => {
+    if (ws.current && ws.current.readyState <= 1) return;   // already armed/listening
     clearTimers(); reset(); setStage('armed');
     try {
       const sock = new WebSocket(`ws://${LAN}:${PORT}`);
@@ -290,7 +304,13 @@ export default function App() {
       liveLoop.current = false;
       if (recActive.current) { try { recorder?.stop(); } catch {} recActive.current = false; }
       try { ws.current.send(JSON.stringify({ type: 'end' })); } catch {}
-      timers.current.push(setTimeout(() => { if (ws.current) { try { ws.current.close(); } catch {} ws.current = null; setStage('idle'); } }, 8000));
+      timers.current.push(setTimeout(() => {
+        if (stageRef.current === 'listening' && ws.current) {  // verdict never came — reset
+          try { ws.current.close(); } catch {}
+          ws.current = null;
+          setStage('idle');
+        }
+      }, 12000));
       return;
     }
     liveLoop.current = false;

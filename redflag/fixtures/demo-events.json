@@ -67,12 +67,14 @@
       "tMs": 5385,
       "confidence": 0.95,
       "tier": 2
-    }
+    },
+    "tMs": 5385
   },
   {
     "type": "risk",
     "score": 21,
-    "band": "calm"
+    "band": "calm",
+    "tMs": 5485
   },
   {
     "type": "transcript",
@@ -154,12 +156,14 @@
       "tMs": 19355,
       "confidence": 0.92,
       "tier": 2
-    }
+    },
+    "tMs": 19355
   },
   {
     "type": "risk",
     "score": 37,
-    "band": "caution"
+    "band": "caution",
+    "tMs": 19455
   },
   {
     "type": "transcript",
@@ -229,12 +233,14 @@
       "tMs": 24250,
       "confidence": 0.96,
       "tier": 2
-    }
+    },
+    "tMs": 24250
   },
   {
     "type": "risk",
     "score": 62,
-    "band": "danger"
+    "band": "danger",
+    "tMs": 24350
   },
   {
     "type": "transcript",
@@ -304,12 +310,14 @@
       "tMs": 29310,
       "confidence": 0.94,
       "tier": 2
-    }
+    },
+    "tMs": 29310
   },
   {
     "type": "risk",
     "score": 100,
-    "band": "critical"
+    "band": "critical",
+    "tMs": 29410
   },
   {
     "type": "transcript",
@@ -379,12 +387,14 @@
       "tMs": 33600,
       "confidence": 0.93,
       "tier": 2
-    }
+    },
+    "tMs": 33600
   },
   {
     "type": "risk",
     "score": 100,
-    "band": "critical"
+    "band": "critical",
+    "tMs": 33700
   },
   {
     "type": "agent",
@@ -416,6 +426,7 @@
       "EXTRACTION",
       "MANUFACTURED_URGENCY",
       "THREAT_ESCALATION"
-    ]
+    ],
+    "tMs": 35600
   }
 ]

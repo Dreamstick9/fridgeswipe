@@ -33,9 +33,14 @@ function liveTrace(onAgent) {
 
 /** One multi-agent pass over the rolling window. Returns tier-2 flags from the judge. */
 async function graphDetect(model, window, { onAgent }) {
+  const timedModel = {
+    ...model,
+    get spentUsd() { return model.spentUsd; },
+    complete: (args) => model.complete({ ...args, signal: args?.signal ?? AbortSignal.timeout(15_000) }),
+  };
   const result = await runGraph(GRAPH_SPEC, {
     nodeImpls: makeGraphNodes(),
-    transport: model,
+    transport: timedModel,
     input: { window },
     trace: liveTrace(onAgent),
   });
@@ -73,8 +78,9 @@ function makeVerdict(flags, modelFailed) {
       confidence: modelFailed ? Math.max(0.5, result.score / 100) : Math.min(1, Math.max(0.5, result.score / 100)),
       headline: modelFailed
         ? 'Analysis was interrupted — treat this call as suspicious'
-        : 'This call shows strong scam indicators',
-      advice: ['Hang up', 'Call 1930 cybercrime helpline'],
+        : `SCAM DETECTED — ${result.score}% RISK`,
+      advice: ['Hang up now', '"Digital arrest" does not exist in Indian law', 'Never transfer money to "verify" it', 'Call 1930 — cybercrime helpline'],
+      techniques: result.techniques ?? [],
     };
   }
   return {
@@ -83,6 +89,7 @@ function makeVerdict(flags, modelFailed) {
     confidence: Math.max(0, Math.min(1, result.score / 100)),
     headline: 'No strong scam indicators detected',
     advice: ['Stay cautious and verify callers through official channels'],
+    techniques: [],
   };
 }
 
@@ -93,6 +100,7 @@ function setupConnection(ws, { llm, llmFactory }) {
     startedAt: Date.now(),
     lastTMs: 0,
     llmBusy: false,
+    graphPasses: 0,
     llmDirty: false,
     llmPromise: null,
     modelFailed: false,
@@ -118,14 +126,16 @@ function setupConnection(ws, { llm, llmFactory }) {
           const window = session.transcript.slice(-WINDOW_CHARS);
           try {
             let result;
+            const MAX_GRAPH_PASSES = 40;
             try {
+              if (++session.graphPasses > MAX_GRAPH_PASSES) throw new Error(`session graph-pass cap (${MAX_GRAPH_PASSES}) reached`);
               result = await graphDetect(model, window, {
                 onAgent: (ev) => sendEvent(ws, ev),
               });
               result.flags = result.flags.map((f) => ({ ...f, tMs: session.lastTMs }));
             } catch (graphErr) {
               // graph pass failed (caps, provider hiccup) — degrade to the single-call detector
-              sendEvent(ws, { type: 'error', message: `graph degraded: ${String(graphErr.message).slice(0, 80)}` });
+              console.error(`graph degraded, falling back to single-call: ${String(graphErr.message).slice(0, 120)}`);
               result = await llmDetect(model, window, {
                 tMs: session.lastTMs,
                 signal: AbortSignal.timeout(LLM_TIMEOUT_MS),
