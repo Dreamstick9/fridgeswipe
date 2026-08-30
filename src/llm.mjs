@@ -31,12 +31,18 @@ export function makeLLM({ provider = process.env.LLM_PROVIDER ?? 'groq', model }
   return {
     kind: provider, model: defaultModel,
     get spentUsd() { return spent; },
-    async complete({ system, prompt, model: override, json = true, maxTokens = 700, temperature = 0.1, signal }) {
+    async complete({ system, prompt, model: override, json = true, maxTokens = 700, temperature = 0.1, signal, extra }) {
       const messages = [...(system ? [{ role: 'system', content: system }] : []), { role: 'user', content: prompt }];
-      const body = (useJsonMode) => JSON.stringify({
-        model: override ?? defaultModel, messages, temperature, max_tokens: maxTokens,
-        ...(useJsonMode ? { response_format: { type: 'json_object' } } : {}),
-      });
+      const body = (useJsonMode) => {
+        const m = override ?? defaultModel;
+        const strict = /^(gpt-5|o\d)/.test(m); // OpenAI reasoning models reject max_tokens + custom temperature
+        return JSON.stringify({
+          model: m, messages,
+          ...(strict ? { max_completion_tokens: maxTokens } : { temperature, max_tokens: maxTokens }),
+          ...(useJsonMode ? { response_format: { type: 'json_object' } } : {}),
+          ...(extra ?? {}),
+        });
+      };
 
       // json_object support varies by provider+model; fall back to plain text (we parse it anyway).
       let useJsonMode = json;

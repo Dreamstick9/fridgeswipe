@@ -9,6 +9,14 @@
         "serve"
       ],
       "port": 3000
+    },
+    {
+      "name": "fridge",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "server/fridge-server.mjs"
+      ],
+      "port": 5177
     }
   ]
 }

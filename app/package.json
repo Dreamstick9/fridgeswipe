@@ -6,6 +6,7 @@
     "expo": "~54.0.37",
     "expo-audio": "~1.1.1",
     "expo-dev-client": "~6.0.21",
+    "expo-haptics": "~15.0.8",
     "expo-linking": "~8.0.12",
     "expo-notifications": "^0.32.17",
     "expo-status-bar": "~3.0.9",

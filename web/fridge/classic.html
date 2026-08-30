@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#12100e">
+<title>FridgeSwipe</title>
+<style>
+  :root {
+    --bg: #12100e; --panel: #1d1a17; --panel2: #26221e; --line: #35302a;
+    --ink: #f4ede3; --dim: #a89d8d; --accent: #ff6d3a; --accent2: #ffb03a;
+    --good: #6fce8f; --bad: #ff5f6b; --warn: #ffc24b;
+    --radius: 18px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overscroll-behavior: none;
+  }
+  #app { max-width: 480px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; padding: env(safe-area-inset-top) 16px calc(16px + env(safe-area-inset-bottom)); }
+  header { display: flex; align-items: baseline; justify-content: space-between; padding: 14px 2px 10px; }
+  header h1 { font-size: 22px; letter-spacing: -0.4px; }
+  header h1 em { color: var(--accent); font-style: normal; }
+  header .sub { color: var(--dim); font-size: 12px; }
+  .screen { display: none; flex: 1; flex-direction: column; }
+  .screen.on { display: flex; }
+  .btn {
+    appearance: none; border: 0; border-radius: 14px; cursor: pointer;
+    font: 600 16px/1 inherit; padding: 15px 18px; color: #1a1208;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    box-shadow: 0 6px 18px rgba(255, 109, 58, .25);
+    transition: transform .08s;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn.ghost { background: var(--panel2); color: var(--ink); box-shadow: none; border: 1px solid var(--line); }
+  .btn:disabled { opacity: .4; pointer-events: none; }
+  .stack { display: flex; flex-direction: column; gap: 12px; }
+
+  /* capture */
+  .hero { text-align: center; padding: 26px 8px 18px; }
+  .hero .big { font-size: 52px; }
+  .hero h2 { font-size: 24px; margin: 10px 0 6px; letter-spacing: -0.4px; }
+  .hero p { color: var(--dim); font-size: 14px; max-width: 300px; margin: 0 auto; }
+  #thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0; }
+  #thumbs .ph { position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); }
+  #thumbs img { width: 100%; height: 100%; object-fit: cover; }
+  #thumbs .rm { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: 50%; border: 0; background: rgba(0,0,0,.65); color: #fff; font-size: 13px; cursor: pointer; }
+  .addph { aspect-ratio: 1; border: 1.5px dashed var(--line); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--dim); font-size: 12px; cursor: pointer; background: none; }
+  .addph span { font-size: 26px; }
+
+  /* progress / thinking feed */
+  .feed { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; flex: 1; overflow-y: auto; font-size: 14px; }
+  .feed .ln { padding: 7px 0; border-bottom: 1px dashed rgba(255,255,255,.05); display: flex; gap: 9px; align-items: flex-start; animation: fadein .3s; }
+  .feed .ln .t { color: var(--dim); font-size: 11px; min-width: 44px; font-variant-numeric: tabular-nums; padding-top: 2px; }
+  .feed .ln.stage { color: var(--accent2); font-weight: 600; }
+  .feed .ln.kill { color: var(--bad); }
+  .feed .ln.ok { color: var(--good); }
+  .feed .ln.info { color: var(--dim); }
+  @keyframes fadein { from { opacity: 0; transform: translateY(4px); } }
+  .spinner { width: 15px; height: 15px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .bar { height: 6px; background: var(--panel2); border-radius: 3px; overflow: hidden; margin: 10px 0 4px; }
+  .bar i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .4s; }
+
+  /* inventory */
+  .invhead { display: flex; justify-content: space-between; align-items: center; margin: 4px 0 10px; }
+  .invhead .n { color: var(--dim); font-size: 13px; }
+  .cat { margin-bottom: 14px; }
+  .cat h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .8px; color: var(--dim); margin-bottom: 7px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; background: var(--panel2);
+    border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; font-size: 14px; cursor: pointer;
+  }
+  .chip.soon { border-color: var(--warn); }
+  .chip .q { color: var(--dim); font-size: 12px; }
+  .chip .x { color: var(--dim); margin-left: 2px; font-size: 15px; }
+  .addrow { display: flex; gap: 8px; margin: 6px 0 12px; }
+  .addrow input { flex: 1; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; color: var(--ink); font: inherit; font-size: 15px; }
+  .addrow input:focus { outline: none; border-color: var(--accent); }
+  .cons { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 14px; }
+  .seg { display: flex; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .seg button { border: 0; background: none; color: var(--dim); padding: 10px 13px; font: 600 13px/1 inherit; cursor: pointer; }
+  .seg button.sel { background: var(--panel2); color: var(--accent2); }
+
+  /* deck */
+  .deckwrap { flex: 1; position: relative; min-height: 430px; margin: 6px 0 10px; }
+  .card {
+    position: absolute; inset: 0; background: linear-gradient(180deg, var(--panel2), var(--panel));
+    border: 1px solid var(--line); border-radius: 22px; padding: 20px 18px;
+    display: flex; flex-direction: column; touch-action: none; user-select: -webkit-user-select; user-select: none;
+    box-shadow: 0 18px 40px rgba(0,0,0,.4); overflow-y: auto;
+  }
+  .card .chef { font-size: 12px; color: var(--dim); }
+  .card h2 { font-size: 26px; letter-spacing: -.5px; margin: 4px 0 8px; }
+  .pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .pill { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); color: var(--dim); }
+  .pill.score { color: var(--accent2); border-color: var(--accent2); }
+  .pill.risky { color: var(--warn); border-color: var(--warn); }
+  .why { font-style: italic; color: var(--accent2); font-size: 14.5px; margin-bottom: 12px; }
+  .sect { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--dim); margin: 8px 0 4px; }
+  .have { color: var(--good); font-size: 14px; }
+  .need { color: var(--warn); font-size: 14px; }
+  .steps { display: none; margin-top: 8px; color: var(--ink); font-size: 14px; padding-left: 18px; }
+  .steps li { margin: 5px 0; }
+  .card.peeking .steps { display: block; }
+  .peek { margin-top: auto; padding-top: 12px; color: var(--dim); font-size: 13px; text-align: center; cursor: pointer; }
+  .stamp {
+    position: absolute; top: 26px; font-size: 30px; font-weight: 800; padding: 4px 14px;
+    border: 4px solid; border-radius: 10px; opacity: 0; transform: rotate(-14deg); pointer-events: none;
+  }
+  .stamp.like { left: 18px; color: var(--good); border-color: var(--good); }
+  .stamp.nope { right: 18px; color: var(--bad); border-color: var(--bad); transform: rotate(14deg); }
+  .deckbtns { display: flex; gap: 14px; justify-content: center; padding-bottom: 4px; }
+  .rnd { width: 62px; height: 62px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel2); font-size: 26px; cursor: pointer; transition: transform .08s; }
+  .rnd:active { transform: scale(.9); }
+  .rnd.yes { border-color: var(--good); } .rnd.no { border-color: var(--bad); }
+  .learnbar { text-align: center; color: var(--dim); font-size: 12.5px; min-height: 18px; padding: 4px 0; }
+  .learnbar b { color: var(--accent2); font-weight: 600; }
+
+  /* plan */
+  .panelbox { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 15px; margin-bottom: 12px; }
+  .panelbox h3 { font-size: 14px; margin-bottom: 9px; }
+  .rec { border-bottom: 1px dashed var(--line); padding: 9px 0; }
+  .rec:last-child { border-bottom: 0; }
+  .rec .top { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+  .rec .top b { font-size: 15.5px; }
+  .rec .meta { color: var(--dim); font-size: 12.5px; }
+  .rec ol { display: none; margin: 8px 0 4px 18px; font-size: 14px; color: var(--ink); }
+  .rec.open ol { display: block; }
+  .shop label { display: flex; gap: 10px; align-items: center; padding: 6px 0; font-size: 14.5px; cursor: pointer; }
+  .shop input { width: 18px; height: 18px; accent-color: var(--accent); }
+  .shop .for { color: var(--dim); font-size: 12px; }
+  .tip { color: var(--dim); font-size: 13.5px; padding: 4px 0 4px 4px; }
+  .empty { text-align: center; color: var(--dim); padding: 40px 20px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>🥕 Fridge<em>Swipe</em></h1>
+    <div class="sub">shoot · swipe · cook</div>
+  </header>
+
+  <!-- 1: capture -->
+  <section class="screen on" id="s-capture">
+    <div class="hero">
+      <div class="big">📸🧊</div>
+      <h2>Shoot your kitchen</h2>
+      <p>Fridge, pantry, counter, that sad vegetable drawer — snap it all. AI reads every shelf.</p>
+    </div>
+    <div id="thumbs"><button class="addph" id="addph"><span>＋</span>add photo</button></div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn" id="analyzeBtn" disabled>Analyze my kitchen →</button>
+    </div>
+    <input type="file" id="file" accept="image/*" capture="environment" multiple hidden>
+  </section>
+
+  <!-- 2: analyzing -->
+  <section class="screen" id="s-analyze">
+    <div class="hero" style="padding:14px 8px 6px"><h2>Reading your shelves…</h2></div>
+    <div class="bar"><i id="abar"></i></div>
+    <div class="feed" id="afeed"></div>
+  </section>
+
+  <!-- 3: inventory -->
+  <section class="screen" id="s-inv">
+    <div class="invhead"><h2 style="font-size:20px">Your kitchen</h2><span class="n" id="invcount"></span></div>
+    <div class="addrow"><input id="addinput" placeholder="add something the AI missed…" enterkeyhint="done"><button class="btn ghost" id="addbtn" style="padding:12px 16px">Add</button></div>
+    <div id="invlist" style="flex:1;overflow-y:auto"></div>
+    <div class="cons">
+      <div class="seg" id="segTime"><button data-v="15">15m</button><button data-v="30" class="sel">30m</button><button data-v="60">60m</button></div>
+      <div class="seg" id="segServ"><button data-v="1">solo</button><button data-v="2" class="sel">×2</button><button data-v="4">fam</button></div>
+      <div class="seg" id="segDiet"><button data-v="" class="sel">any</button><button data-v="vegetarian">veg</button><button data-v="vegan">vegan</button></div>
+    </div>
+    <button class="btn" id="cookBtn">Find my dinner 🔥</button>
+  </section>
+
+  <!-- 4: thinking -->
+  <section class="screen" id="s-think">
+    <div class="hero" style="padding:14px 8px 6px"><h2>The kitchen brain is on</h2><p>4 chefs, 1 auditor, 0 hallucinated ingredients.</p></div>
+    <div class="feed" id="tfeed"></div>
+  </section>
+
+  <!-- 5: deck -->
+  <section class="screen" id="s-deck">
+    <div class="learnbar" id="learnbar"></div>
+    <div class="deckwrap" id="deckwrap"></div>
+    <div class="deckbtns">
+      <button class="rnd no" id="btnNope">✕</button>
+      <button class="rnd yes" id="btnLike">🔥</button>
+    </div>
+    <button class="btn ghost" id="doneBtn" style="margin-top:10px">Done — build my plan (<span id="likedN">0</span> picked)</button>
+  </section>
+
+  <!-- 6: plan -->
+  <section class="screen" id="s-plan">
+    <div class="hero" style="padding:12px 8px 8px"><h2>Tonight's plan 🍽️</h2></div>
+    <div style="flex:1;overflow-y:auto">
+      <div class="panelbox"><h3>Cooking (in order)</h3><div id="planrecs"></div></div>
+      <div class="panelbox"><h3>Shopping gaps 🛒</h3><div class="shop" id="planshop"></div></div>
+      <div class="panelbox" id="tipbox" style="display:none"><h3>Strategy</h3><div id="plantips"></div></div>
+      <div class="panelbox" id="learnbox" style="display:none"><h3>What I've learned about you 🧠</h3><div class="tip" id="planlearn"></div></div>
+    </div>
+    <div class="stack" style="margin-top:10px">
+      <button class="btn" id="againBtn">New deck (it knows you better now)</button>
+      <button class="btn ghost" id="restartBtn">Start over with new photos</button>
+    </div>
+  </section>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+// Works when served by fridge-server (same origin) AND when someone double-clicks the file (file://)
+const API_BASE = location.protocol.startsWith('http') ? '' : 'http://10.10.29.28:5177';
+const api = (p) => API_BASE + p;
+const show = (id) => { document.querySelectorAll('.screen').forEach(e => e.classList.remove('on')); $(id).classList.add('on'); window.scrollTo(0, 0); };
+const CAT_EMOJI = { produce:'🥬', dairy:'🥛', protein:'🍗', grain:'🌾', spice:'🌶️', condiment:'🫙', frozen:'🧊', beverage:'🧃', snack:'🍪', other:'🍽️' };
+
+let photos = [];        // {dataUrl, b64}
+let items = [];         // inventory
+let deck = [], deckPos = 0, liked = [];
+let constraints = { minutes: 30, servings: 2, diet: '' };
+let t0 = 0;
+
+// ---------- feed helper ----------
+function feedLine(feedEl, txt, cls = '', withSpin = false) {
+  const ln = document.createElement('div');
+  ln.className = 'ln ' + cls;
+  const t = ((Date.now() - t0) / 1000).toFixed(1) + 's';
+  ln.innerHTML = `<span class="t">${t}</span><span class="b">${withSpin ? '<span class="spinner"></span> ' : ''}${txt}</span>`;
+  feedEl.appendChild(ln);
+  feedEl.scrollTop = feedEl.scrollHeight;
+  return ln;
+}
+const stopSpin = (ln) => ln?.querySelector('.spinner')?.remove();
+
+// ---------- capture ----------
+$('#addph').onclick = () => $('#file').click();
+$('#file').onchange = async (e) => {
+  for (const f of e.target.files) {
+    const dataUrl = await compress(f);
+    photos.push({ dataUrl, b64: dataUrl.split(',')[1] });
+  }
+  e.target.value = '';
+  renderThumbs();
+};
+function renderThumbs() {
+  const wrap = $('#thumbs');
+  wrap.innerHTML = '';
+  photos.forEach((p, i) => {
+    const d = document.createElement('div');
+    d.className = 'ph';
+    d.innerHTML = `<img src="${p.dataUrl}"><button class="rm">✕</button>`;
+    d.querySelector('.rm').onclick = () => { photos.splice(i, 1); renderThumbs(); };
+    wrap.appendChild(d);
+  });
+  const add = document.createElement('button');
+  add.className = 'addph'; add.id = 'addph';
+  add.innerHTML = '<span>＋</span>add photo';
+  add.onclick = () => $('#file').click();
+  wrap.appendChild(add);
+  $('#analyzeBtn').disabled = !photos.length;
+}
+async function compress(file) {
+  const bmp = await createImageBitmap(file);
+  const scale = Math.min(1, 1280 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', 0.85);
+}
+
+// ---------- analyze ----------
+$('#analyzeBtn').onclick = async () => {
+  show('#s-analyze');
+  const feed = $('#afeed'); feed.innerHTML = ''; t0 = Date.now();
+  const lists = [];
+  for (let i = 0; i < photos.length; i++) {
+    const ln = feedLine(feed, `Scanning photo ${i + 1}/${photos.length} — reading labels, counting items…`, '', true);
+    try {
+      const r = await fetch(api('/api/analyze'), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ data: photos[i].b64, mediaType: 'image/jpeg' }) });
+      const j = await r.json();
+      if (j.error) throw new Error(j.error);
+      stopSpin(ln);
+      lists.push(j.items);
+      feedLine(feed, `✓ photo ${i + 1}: found <b>${j.items.length}</b> items (${(j.ms / 1000).toFixed(1)}s) — ${j.items.slice(0, 5).map(x => x.name).join(', ')}${j.items.length > 5 ? '…' : ''}`, 'ok');
+    } catch (err) {
+      stopSpin(ln);
+      feedLine(feed, `✗ photo ${i + 1} failed: ${err.message}`, 'kill');
+    }
+    $('#abar').style.width = `${((i + 1) / photos.length) * 90}%`;
+  }
+  feedLine(feed, 'Merging + de-duplicating across photos…', 'stage');
+  try {
+    const m = await fetch(api('/api/merge'), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ lists }) }).then(r => r.json());
+    items = m.items ?? [];
+  } catch { items = lists.flat(); }
+  $('#abar').style.width = '100%';
+  feedLine(feed, `Inventory built: <b>${items.length}</b> unique items. Your turn — fix anything I got wrong.`, 'ok');
+  setTimeout(() => { renderInv(); show('#s-inv'); }, 700);
+};
+
+// ---------- inventory ----------
+function renderInv() {
+  const byCat = {};
+  items.forEach((it, i) => { (byCat[it.category ?? 'other'] ??= []).push([it, i]); });
+  const el = $('#invlist'); el.innerHTML = '';
+  for (const [cat, arr] of Object.entries(byCat)) {
+    const d = document.createElement('div');
+    d.className = 'cat';
+    d.innerHTML = `<h3>${CAT_EMOJI[cat] ?? '🍽️'} ${cat}</h3><div class="chips"></div>`;
+    const chips = d.querySelector('.chips');
+    for (const [it, i] of arr) {
+      const c = document.createElement('span');
+      c.className = 'chip' + (it.freshness === 'use-soon' ? ' soon' : '');
+      c.innerHTML = `${it.name}${it.qty ? ` <span class="q">${it.qty}</span>` : ''}${it.freshness === 'use-soon' ? ' ⏳' : ''}<span class="x">✕</span>`;
+      c.querySelector('.x').onclick = (e) => { e.stopPropagation(); items.splice(i, 1); renderInv(); };
+      c.onclick = () => {
+        const nv = prompt('Edit item (blank to keep):', it.name);
+        if (nv !== null && nv.trim()) { it.name = nv.trim(); renderInv(); }
+      };
+      chips.appendChild(c);
+    }
+    el.appendChild(d);
+  }
+  $('#invcount').textContent = `${items.length} items`;
+}
+$('#addbtn').onclick = () => {
+  const v = $('#addinput').value.trim();
+  if (!v) return;
+  items.push({ name: v, qty: '', category: 'other', freshness: 'unknown', confidence: 1 });
+  $('#addinput').value = '';
+  renderInv();
+};
+$('#addinput').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#addbtn').click(); });
+for (const [segId, key] of [['#segTime', 'minutes'], ['#segServ', 'servings'], ['#segDiet', 'diet']]) {
+  $(segId).querySelectorAll('button').forEach(b => b.onclick = () => {
+    $(segId).querySelectorAll('button').forEach(x => x.classList.remove('sel'));
+    b.classList.add('sel');
+    constraints[key] = key === 'diet' ? b.dataset.v : Number(b.dataset.v);
+  });
+}
+
+// ---------- think (streaming deck build) ----------
+$('#cookBtn').onclick = buildDeck;
+$('#againBtn').onclick = buildDeck;
+let building = false;
+async function buildDeck() {
+  if (building) return;
+  building = true;
+  show('#s-think');
+  const feed = $('#tfeed'); feed.innerHTML = ''; t0 = Date.now();
+  let spinLn = null;
+  try {
+    const res = await fetch(api('/api/deck'), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ items, constraints }) });
+    const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let nl;
+      while ((nl = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, nl); buf = buf.slice(nl + 1);
+        if (line.trim()) handleEvent(JSON.parse(line), feed);
+      }
+    }
+  } catch (e) {
+    feedLine(feed, 'Pipeline error: ' + e.message, 'kill');
+  } finally {
+    building = false;
+  }
+  function handleEvent(ev, feed) {
+    stopSpin(spinLn);
+    if (ev.type === 'stage') spinLn = feedLine(feed, ev.label + (ev.chefs ? `<br><span style="color:var(--dim);font-size:12.5px">${ev.chefs.join(' · ')}</span>` : ''), 'stage', true);
+    else if (ev.type === 'profile') feedLine(feed, `🧠 taste memory: <b>${ev.text}</b>`, 'ok');
+    else if (ev.type === 'candidate') feedLine(feed, ev.error ? `${ev.chef} burned the draft (${ev.error})` : `${ev.chef} pitched: <b>${ev.names.join('</b> + <b>')}</b> <span style="color:var(--dim)">(${(ev.ms/1000).toFixed(1)}s)</span>`, ev.error ? 'kill' : '');
+    else if (ev.type === 'xcheck') feedLine(feed, `🔎 ${ev.note}`, ev.caught ? 'kill' : 'ok');
+    else if (ev.type === 'verify') { for (const v of ev.verdicts) feedLine(feed, v.keep ? `✓ <b>${v.name}</b> survives (feasibility ${v.feasibility}/10)` : `☠️ killed <b>${v.name}</b> — ${v.reason || 'not feasible'}`, v.keep ? 'ok' : 'kill'); }
+    else if (ev.type === 'error') feedLine(feed, '💥 ' + ev.message, 'kill');
+    else if (ev.type === 'deck') {
+      for (const k of ev.killed) feedLine(feed, `🗑️ dropped <b>${k.name}</b> — ${k.reason}`, 'info');
+      feedLine(feed, `Deck ready: <b>${ev.cards.length}</b> dishes made the cut in ${(ev.ms / 1000).toFixed(1)}s. Swipe time.`, 'stage');
+      deck = ev.cards; deckPos = 0; liked = [];
+      $('#learnbar').innerHTML = ev.learned ? `🧠 <b>${ev.learned}</b>` : 'swipe right to cook it, left to skip — I’m taking notes';
+      setTimeout(() => { renderDeck(); show('#s-deck'); }, 900);
+    }
+  }
+}
+
+// ---------- deck ----------
+function renderDeck() {
+  const wrap = $('#deckwrap'); wrap.innerHTML = '';
+  $('#likedN').textContent = liked.length;
+  const remaining = deck.slice(deckPos);
+  if (!remaining.length) {
+    wrap.innerHTML = `<div class="empty">Deck's done.<br>${liked.length ? 'Build your plan below 👇' : 'Nothing? Brutal. Hit “Done” and I’ll relearn.'}</div>`;
+    return;
+  }
+  remaining.slice(0, 3).reverse().forEach((card, idx, arr) => {
+    const isTop = idx === arr.length - 1;
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.style.transform = `scale(${1 - (arr.length - 1 - idx) * 0.04}) translateY(${(arr.length - 1 - idx) * -10}px)`;
+    el.innerHTML = `
+      <div class="chef">${card.chef ?? ''}</div>
+      <h2>${card.name}</h2>
+      <div class="pills">
+        <span class="pill">🍳 ${card.cuisine ?? ''}</span><span class="pill">⏱ ${card.minutes}m</span>
+        <span class="pill">${card.difficulty ?? 'easy'}</span><span class="pill score">★ ${card.score}</span>
+        ${card.risky ? '<span class="pill risky">⚠ long shot</span>' : ''}
+      </div>
+      <div class="why">“${card.why_you ?? ''}”</div>
+      <div class="sect">From your kitchen</div>
+      <div class="have">${(card.uses ?? []).map(u => u.item).join(' · ') || '—'}</div>
+      ${card.missing?.length ? `<div class="sect">You'd need</div><div class="need">${card.missing.map(m => m.item + (m.essential ? '' : ' (optional)')).join(' · ')}</div>` : ''}
+      <ol class="steps">${(card.steps ?? []).map(s => `<li>${s}</li>`).join('')}</ol>
+      <div class="peek">▾ peek at the steps</div>
+      <div class="stamp like">COOK</div><div class="stamp nope">NOPE</div>`;
+    el.querySelector('.peek').onclick = (e) => { e.stopPropagation(); el.classList.toggle('peeking'); e.target.textContent = el.classList.contains('peeking') ? '▴ hide steps' : '▾ peek at the steps'; };
+    if (isTop) attachSwipe(el, card);
+    wrap.appendChild(el);
+  });
+}
+function attachSwipe(el, card) {
+  let sx = 0, sy = 0, dx = 0, dragging = false;
+  el.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('.peek')) return;
+    dragging = true; sx = e.clientX; sy = e.clientY; el.setPointerCapture(e.pointerId);
+    el.style.transition = 'none';
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    dx = e.clientX - sx;
+    const dy = e.clientY - sy;
+    el.style.transform = `translate(${dx}px, ${dy * 0.3}px) rotate(${dx / 18}deg)`;
+    el.querySelector('.stamp.like').style.opacity = Math.max(0, dx / 90);
+    el.querySelector('.stamp.nope').style.opacity = Math.max(0, -dx / 90);
+  });
+  el.addEventListener('pointerup', () => {
+    dragging = false;
+    if (Math.abs(dx) > 90) flyOut(el, card, dx > 0);
+    else { el.style.transition = 'transform .25s'; el.style.transform = ''; el.querySelectorAll('.stamp').forEach(s => s.style.opacity = 0); }
+    dx = 0;
+  });
+}
+async function flyOut(el, card, isLike) {
+  if (el.dataset.gone) return;
+  el.dataset.gone = '1';
+  el.style.transition = 'transform .35s, opacity .35s';
+  el.style.transform = `translate(${isLike ? 560 : -560}px, -40px) rotate(${isLike ? 24 : -24}deg)`;
+  el.style.opacity = 0;
+  if (isLike) liked.push(card);
+  deckPos++;
+  fetch(api('/api/swipe'), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ card, dir: isLike ? 'like' : 'nope' }) })
+    .then(r => r.json()).then(j => { if (j.learned) $('#learnbar').innerHTML = `🧠 <b>${j.learned}</b>`; }).catch(() => {});
+  setTimeout(renderDeck, 320);
+}
+$('#btnLike').onclick = () => { const el = $('#deckwrap .card:last-child'); if (el && deck[deckPos]) flyOut(el, deck[deckPos], true); };
+$('#btnNope').onclick = () => { const el = $('#deckwrap .card:last-child'); if (el && deck[deckPos]) flyOut(el, deck[deckPos], false); };
+
+// ---------- plan ----------
+$('#doneBtn').onclick = async () => {
+  if (!liked.length) { buildDeck(); return; }
+  show('#s-plan');
+  $('#planrecs').innerHTML = '<div class="tip">assembling…</div>';
+  const p = await fetch(api('/api/plan'), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ liked, items }) }).then(r => r.json());
+  const order = p.order?.length ? p.order : liked.map(l => l.name);
+  const sorted = [...liked].sort((a, b) => order.findIndex(n => n.toLowerCase() === a.name.toLowerCase()) - order.findIndex(n => n.toLowerCase() === b.name.toLowerCase()));
+  $('#planrecs').innerHTML = '';
+  sorted.forEach((r, i) => {
+    const d = document.createElement('div');
+    d.className = 'rec';
+    d.innerHTML = `<div class="top"><b>${i + 1}. ${r.name}</b><span class="meta">⏱ ${r.minutes}m ▾</span></div><ol>${r.steps.map(s => `<li>${s}</li>`).join('')}</ol>`;
+    d.querySelector('.top').onclick = () => d.classList.toggle('open');
+    $('#planrecs').appendChild(d);
+  });
+  const shop = $('#planshop');
+  shop.innerHTML = p.shopping?.length
+    ? p.shopping.map(s => `<label><input type="checkbox"><span>${s.item}${s.qty ? ` (${s.qty})` : ''}</span><span class="for">for ${s.for.join(', ')}</span></label>`).join('')
+    : '<div class="tip">Zero shopping needed — everything\'s already in your kitchen 💪</div>';
+  const tips = [...(p.tips ?? []), ...(p.contested?.length ? [`⚖️ ${p.contested.map(c => `${c.item} is wanted by ${c.by.join(' AND ')} — portion it`).join('; ')}`] : []), ...(p.useSoonUnused?.length ? [`⏳ still unused & dying soon: ${p.useSoonUnused.join(', ')}`] : [])];
+  $('#tipbox').style.display = tips.length ? '' : 'none';
+  $('#plantips').innerHTML = tips.map(t => `<div class="tip">• ${t}</div>`).join('');
+  fetch(api('/api/taste')).then(r => r.json()).then(t => {
+    if (t.profile || t.learned) { $('#learnbox').style.display = ''; $('#planlearn').textContent = t.profile || t.learned; }
+  }).catch(() => {});
+};
+$('#restartBtn').onclick = () => { photos = []; items = []; deck = []; liked = []; renderThumbs(); show('#s-capture'); };
+</script>
+</body>
+</html>
