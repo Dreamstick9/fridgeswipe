@@ -1,18 +1,18 @@
 <!doctype html>
 <!--
-THESIS: The pipeline is a maison composing today's carte, and the surface is its paper.
-Refuses the category default: the dark glowing "AI dashboard".
-OWN-WORLD: Ivoire paper #F5F1E8, warm ink #1F1B16, one Bordeaux #6D1F2B used as an
-editor's pen (kills, OUI, urgency). Bodoni Moda display + Jost grotesque. Hairline
-rules, sharp corners, letterspaced French micro-labels; the only filled surface is
-the recipe sheet.
-STORY: A judge shoots their shelves, corrects the inventory, answers the maison's
-four-question commande, watches chefs pitch and an auditor kill in public, locks each
-course with an OUI, and leaves with a menu, macros, and the courses.
-FIRST VIEWPORT: Masthead (wordmark over a thick-thin rule, French date), kicker
-L'INVENTAIRE, display statement, line-drawn cloche, photo grid, ink CTA at bottom.
-FORM: Carte / atelier journal - brief-pinned (no tournament, no seed). Staging:
-single editorial column; one-question-per-screen commande; timestamp-gutter journal;
+THESIS: The pipeline is a fashion-house kitchen composing today's menu, and the
+surface is its paper. Refuses the category default: the dark glowing "AI dashboard".
+OWN-WORLD: Ivory paper #F5F1E8, warm ink #1F1B16, one Bordeaux #6D1F2B used as an
+editor's pen (kills, SÌ, urgency). Bodoni Moda display + Jost grotesque. Hairline
+rules, sharp corners, letterspaced Italian micro-labels with muted English echoes;
+the only filled surface is the recipe sheet.
+STORY: A judge shoots their shelves, corrects the inventory, answers the house's
+four-question order, watches chefs pitch and an auditor kill in public, locks each
+course with a SÌ, and leaves with a menu, macros, and the courses.
+FIRST VIEWPORT: Masthead (wordmark over a thick-thin rule, Italian date), kicker
+L'INVENTARIO, display statement, line-drawn cloche, photo grid, ink CTA at bottom.
+FORM: Menu-card / atelier journal - brief-pinned (no tournament, no seed). Staging:
+single editorial column; one-question-per-screen order; timestamp-gutter journal;
 stamped-sheet deck.
 -->
 <html lang="en">
@@ -79,6 +79,8 @@ stamped-sheet deck.
   .scrollbody { flex: 1; min-height: 0; overflow-y: auto; }
   .kicker { font: 500 10.5px/1.4 var(--sans); letter-spacing: .18em; text-transform: uppercase;
     color: var(--bordeaux); margin-bottom: 10px; }
+  .echo { font: 500 9px/1.4 var(--sans); letter-spacing: .16em; text-transform: uppercase;
+    color: var(--ink-soft); margin: -7px 0 10px; }
   .display { font: 460 clamp(28px, 7.5vw, 38px)/1.08 var(--serif); letter-spacing: 0; margin-bottom: 12px; }
   .h2 { font: 500 24px/1.12 var(--serif); margin-bottom: 10px; }
   .lede { color: var(--ink-soft); font-size: 15px; max-width: 34em; margin-bottom: 8px; }
@@ -126,7 +128,8 @@ stamped-sheet deck.
   /* ---------- progress + journal ---------- */
   .progress { display: flex; align-items: center; gap: 14px; margin: 14px 0 16px; }
   .track { flex: 1; height: 2px; background: var(--rule); position: relative; }
-  .track i { position: absolute; top: 0; left: 0; bottom: 0; width: 0%; background: var(--ink); transition: width .4s; }
+  .track i { position: absolute; inset: 0; background: var(--ink); transform: scaleX(0);
+    transform-origin: 0 50%; transition: transform .4s; }
   .progress .micro { color: var(--ink-soft); white-space: nowrap; }
   .journal { flex: 1; min-height: 0; overflow-y: auto; border-top: 1px solid var(--rule); margin-top: 6px; }
   .ln { display: flex; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--rule-faint);
@@ -176,7 +179,7 @@ stamped-sheet deck.
     padding: 6px 0; text-transform: uppercase; }
   .seg-vals button.sel { color: var(--ink); box-shadow: inset 0 -1px 0 var(--bordeaux); padding-bottom: 5px; }
 
-  /* ---------- the commande (one question per screen) ---------- */
+  /* ---------- l'ordine (one question per screen) ---------- */
   .wizhead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
   .wizhead .textbtn { padding-left: 0; color: var(--ink-soft); }
   .wizhead .textbtn:hover { color: var(--ink); }
@@ -232,6 +235,7 @@ stamped-sheet deck.
   .sheet-lab { font: 500 9.5px/1.4 var(--sans); letter-spacing: .18em; text-transform: uppercase;
     color: var(--ink-soft); margin: 8px 0 3px; }
   .sheet-lab.need { color: var(--bordeaux); }
+  .sheet-lab.need span { color: var(--ink-soft); }
   .sheet-have, .sheet-need { font-size: 14.5px; line-height: 1.45; }
   .sheet-have { margin-bottom: 14px; }
   .sheet-need { color: var(--bordeaux); }
@@ -249,8 +253,8 @@ stamped-sheet deck.
     padding: 8px 18px 10px; border: 2px solid currentColor; opacity: 0; pointer-events: none;
   }
   .stamp::after { content: ""; position: absolute; inset: 3px; border: 1px solid currentColor; }
-  .stamp.oui { left: 16px; color: var(--bordeaux); transform: rotate(-8deg); }
-  .stamp.non { right: 16px; color: var(--ink); transform: rotate(8deg); }
+  .stamp.si { left: 16px; color: var(--bordeaux); transform: rotate(-8deg); }
+  .stamp.no { right: 16px; color: var(--ink); transform: rotate(8deg); }
   .deckbtns { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .vote { flex: 1; max-width: 150px; min-height: 52px; border: 1px solid var(--ink);
     font: 550 19px/1 var(--serif); letter-spacing: .05em;
@@ -315,7 +319,7 @@ stamped-sheet deck.
 <div id="app">
   <header>
     <div class="mast-top">
-      <span class="micro">Du frigo &agrave; la table</span>
+      <span class="micro">Dal frigo alla tavola</span>
       <span class="micro" id="mastDate"></span>
     </div>
     <h1 class="mast-word">Fridge<i>Swipe</i></h1>
@@ -324,9 +328,9 @@ stamped-sheet deck.
 
   <!-- 1 · capture -->
   <section class="screen on" id="s-capture">
-    <p class="kicker">L&rsquo;inventaire</p>
+    <p class="kicker">L&rsquo;inventario</p>
     <h2 class="display">Photograph your&nbsp;kitchen.</h2>
-    <p class="lede">Fridge, pantry, counter &mdash; shoot every shelf. The maison reads labels, counts, and freshness.</p>
+    <p class="lede">Fridge, pantry, counter &mdash; shoot every shelf. The house reads labels, counts, and freshness.</p>
     <div class="scrollbody">
       <svg class="cloche" id="cloche" viewBox="0 0 200 118" aria-hidden="true">
         <circle cx="100" cy="19" r="5.5"/>
@@ -344,7 +348,7 @@ stamped-sheet deck.
 
   <!-- 2 · analyzing -->
   <section class="screen" id="s-analyze">
-    <p class="kicker">Lecture des &eacute;tag&egrave;res</p>
+    <p class="kicker">Lettura degli scaffali</p>
     <h2 class="h2">Reading your shelves.</h2>
     <div class="progress"><div class="track"><i id="abar"></i></div><span class="micro" id="aCount"></span></div>
     <div class="journal" id="afeed"></div>
@@ -353,29 +357,29 @@ stamped-sheet deck.
 
   <!-- 3 · inventory -->
   <section class="screen" id="s-inv">
-    <p class="kicker">Votre cuisine</p>
-    <div class="invhead"><h2 class="h2">The inventory.</h2><span class="micro" id="invcount"></span></div>
-    <p class="lede small">Tap a name to correct it &mdash; the maison cooks only with the truth.</p>
+    <p class="kicker">L&rsquo;inventario</p>
+    <div class="invhead"><h2 class="h2">La Cucina.</h2><span class="micro" id="invcount"></span></div>
+    <p class="lede small">Your kitchen, shelf by shelf &mdash; tap a name to correct it. The house cooks only with the truth.</p>
     <div class="invlist" id="invlist"></div>
-    <p class="footnote" id="soonNote" hidden><b>*</b>&nbsp;use soon &mdash; the maison will give it priority</p>
+    <p class="footnote" id="soonNote" hidden><b>*</b>&nbsp;use soon &mdash; the house will give it priority</p>
     <div class="addrow">
       <input id="addinput" placeholder="Add something it missed" enterkeyhint="done">
       <button class="textbtn" id="addbtn">Add</button>
     </div>
     <div class="cons">
-      <div class="seg" data-key="minutes"><span class="micro">Temps par plat</span>
+      <div class="seg" data-key="minutes"><span class="micro">Time per dish</span>
         <span class="seg-vals"><button data-v="15">15&prime;</button><button data-v="30" class="sel">30&prime;</button><button data-v="60">60&prime;</button></span></div>
     </div>
     <div class="stack"><button class="btn" id="toWizBtn">Compose the menu</button></div>
   </section>
 
-  <!-- 4 · la commande : one question per screen -->
+  <!-- 4 · l'ordine : one question per screen -->
   <section class="screen" id="s-q1">
     <div class="wizhead">
       <button class="textbtn back" data-back="#s-inv">&larr; Back</button>
       <span class="wizsteps"><b>I</b> &middot; <span>II</span> &middot; <span>III</span> &middot; <span>IV</span></span>
     </div>
-    <p class="kicker">La dur&eacute;e</p>
+    <p class="kicker">La durata</p>
     <h2 class="display">How long are we planning&nbsp;for?</h2>
     <div class="scrollbody">
       <div class="qlist" id="qDays">
@@ -395,11 +399,11 @@ stamped-sheet deck.
       <button class="textbtn back" data-back="#s-q1">&larr; Back</button>
       <span class="wizsteps"><span>I</span> &middot; <b>II</b> &middot; <span>III</span> &middot; <span>IV</span></span>
     </div>
-    <p class="kicker">Les repas</p>
+    <p class="kicker">I pasti</p>
     <h2 class="display">How many meals a&nbsp;day?</h2>
     <div class="mealcenter">
       <span class="bignum" id="mealN">3</span>
-      <span class="micro">Repas par jour</span>
+      <span class="micro">Pasti al giorno &middot; meals a day</span>
       <input type="range" class="slider" id="mealSlider" min="1" max="7" step="1" value="3" aria-label="Meals per day">
       <p class="mealline" id="mealLine"></p>
     </div>
@@ -411,7 +415,7 @@ stamped-sheet deck.
       <button class="textbtn back" data-back="#s-q2">&larr; Back</button>
       <span class="wizsteps"><span>I</span> &middot; <span>II</span> &middot; <b>III</b> &middot; <span>IV</span></span>
     </div>
-    <p class="kicker">Le r&eacute;gime</p>
+    <p class="kicker">La dieta</p>
     <h2 class="display">How do you&nbsp;eat?</h2>
     <div class="scrollbody">
       <div class="qlist" id="qDiet">
@@ -427,9 +431,9 @@ stamped-sheet deck.
       <button class="textbtn back" data-back="#s-q3">&larr; Back</button>
       <span class="wizsteps"><span>I</span> &middot; <span>II</span> &middot; <span>III</span> &middot; <b>IV</b></span>
     </div>
-    <p class="kicker">Les contraintes</p>
+    <p class="kicker">Le restrizioni</p>
     <h2 class="display">Any other restrictions?</h2>
-    <p class="lede small">Allergies, dislikes, anything the maison must respect.</p>
+    <p class="lede small">Allergies, dislikes, anything the house must respect.</p>
     <input class="freein" id="restrictInput" placeholder="no onion &amp; garlic, gluten-free&hellip;" enterkeyhint="go">
     <div class="scrollbody"></div>
     <div class="stack">
@@ -441,6 +445,7 @@ stamped-sheet deck.
   <!-- 5 · thinking / streaming journal -->
   <section class="screen" id="s-think">
     <p class="kicker" id="thinkKicker"></p>
+    <p class="echo" id="thinkEcho"></p>
     <h2 class="h2" id="thinkTitle">Composing the course.</h2>
     <p class="lede small" id="thinkSub">The chefs draft, the auditor swears them in. Kills are public.</p>
     <div class="journal" id="tfeed"></div>
@@ -451,19 +456,20 @@ stamped-sheet deck.
   <section class="screen" id="s-deck">
     <div class="deckhead">
       <p class="kicker" id="deckKicker"></p>
+      <p class="echo" id="deckEcho"></p>
       <p class="learnline" id="learnbar"></p>
     </div>
     <div class="deckwrap" id="deckwrap"></div>
     <div class="deckbtns">
-      <button class="vote no" id="btnNope">Non</button>
+      <button class="vote no" id="btnNope">No</button>
       <span class="deckcount" id="deckCount"></span>
-      <button class="vote yes" id="btnLike">Oui</button>
+      <button class="vote yes" id="btnLike">S&igrave;</button>
     </div>
   </section>
 
   <!-- 7 · the plan -->
   <section class="screen" id="s-week">
-    <p class="kicker" id="planKicker">Le menu</p>
+    <p class="kicker" id="planKicker">Il menu</p>
     <h2 class="h2" id="planTitle">The menu.</h2>
     <div class="planbody" id="weekbody"></div>
     <div class="stack">
@@ -481,11 +487,11 @@ const api = (p) => API_BASE + p;
 const esc = (v) => String(v ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const show = (id) => { document.querySelectorAll('.screen').forEach(e => e.classList.remove('on')); $(id).classList.add('on'); window.scrollTo(0, 0); };
 const NBSP = ' ';
-const fmt = (n) => Math.round(n).toLocaleString('fr-FR');
+const fmt = (n) => Math.round(n).toLocaleString('it-IT');
 
-const CAT_FR = { produce: 'Primeurs', dairy: 'Crèmerie', protein: 'Boucherie', grain: 'Épicerie',
-  spice: 'Épices', condiment: 'Condiments', frozen: 'Surgelés', beverage: 'Cave', snack: 'Gourmandises', other: 'Divers' };
-const MEAL_FR = { breakfast: 'Petit-déjeuner', lunch: 'Déjeuner', dinner: 'Dîner', snack: 'Snack' };
+const CAT_IT = { produce: 'Ortofrutta', dairy: 'Latteria', protein: 'Macelleria', grain: 'Dispensa',
+  spice: 'Spezie', condiment: 'Condimenti', frozen: 'Surgelati', beverage: 'Cantina', snack: 'Merende', other: 'Varie' };
+const MEAL_IT = { breakfast: 'Colazione', lunch: 'Pranzo', dinner: 'Cena', snack: 'Spuntino' };
 const MEAL_EN = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snack' };
 const MEALS_BY_N = {
   1: ['dinner'],
@@ -497,11 +503,11 @@ const MEALS_BY_N = {
   7: ['breakfast', 'snack', 'lunch', 'snack', 'dinner', 'snack', 'snack'],
 };
 
-// masthead date — édition du jour
+// masthead date — edizione del giorno
 (() => {
-  const m = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  const m = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
   const d = new Date();
-  $('#mastDate').textContent = `Édition du ${d.getDate() === 1 ? '1er' : d.getDate()} ${m[d.getMonth()]}`;
+  $('#mastDate').textContent = `Edizione del ${d.getDate() === 1 ? '1º' : d.getDate()} ${m[d.getMonth()]}`;
 })();
 
 let photos = [];        // {dataUrl, b64}
@@ -547,7 +553,7 @@ function renderThumbs() {
   });
   const add = document.createElement('button');
   add.className = 'addph';
-  add.innerHTML = '<span class="plus">+</span><span class="micro">Ajouter</span>';
+  add.innerHTML = '<span class="plus">+</span><span class="micro">Aggiungi</span>';
   add.onclick = () => $('#file').click();
   wrap.appendChild(add);
   $('#cloche').style.display = photos.length ? 'none' : '';
@@ -567,10 +573,10 @@ $('#analyzeBtn').onclick = async () => {
   show('#s-analyze');
   $('#aErr').hidden = true;
   const feed = $('#afeed'); feed.innerHTML = ''; t0 = Date.now();
-  $('#abar').style.width = '0%';
+  $('#abar').style.transform = 'scaleX(0)';
   const lists = [];
   for (let i = 0; i < photos.length; i++) {
-    $('#aCount').textContent = `Photo ${i + 1}/${photos.length}`;
+    $('#aCount').textContent = `Foto ${i + 1}/${photos.length}`;
     const ln = feedLine(feed, `Reading photo ${i + 1} of ${photos.length} — labels, counts, freshness`, '', true);
     try {
       const r = await fetch(api('/api/analyze'), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ data: photos[i].b64, mediaType: 'image/jpeg' }) });
@@ -584,7 +590,7 @@ $('#analyzeBtn').onclick = async () => {
       stopDots(ln);
       feedLine(feed, `Photo ${i + 1} failed — ${esc(err.message)}`, 'kill');
     }
-    $('#abar').style.width = `${((i + 1) / photos.length) * 90}%`;
+    $('#abar').style.transform = `scaleX(${((i + 1) / photos.length) * 0.9})`;
   }
   feedLine(feed, 'Merging &amp; de-duplicating across photos', 'stage', true);
   try {
@@ -592,7 +598,7 @@ $('#analyzeBtn').onclick = async () => {
     items = m.items ?? lists.flat();
   } catch { items = lists.flat(); }
   stopDots(feed.lastChild);
-  $('#abar').style.width = '100%';
+  $('#abar').style.transform = 'scaleX(1)';
   if (!items.length) {
     feedLine(feed, 'Nothing readable came back — better light, closer shots.', 'kill');
     $('#aErr').hidden = false;
@@ -612,8 +618,8 @@ function renderInv() {
   for (const [cat, arr] of Object.entries(byCat)) {
     const d = document.createElement('div');
     d.className = 'cat';
-    const fr = CAT_FR[cat];
-    d.innerHTML = `<h3 class="cat-h">${fr ? esc(fr) + ' <span>· ' + esc(cat) + '</span>' : esc(cat)}</h3><div class="items"></div>`;
+    const it_ = CAT_IT[cat];
+    d.innerHTML = `<h3 class="cat-h">${it_ ? esc(it_) + ' <span>· ' + esc(cat) + '</span>' : esc(cat)}</h3><div class="items"></div>`;
     const box = d.querySelector('.items');
     for (const it of arr) {
       if (it.freshness === 'use-soon') anySoon = true;
@@ -664,7 +670,7 @@ document.querySelectorAll('.seg').forEach(seg => {
   });
 });
 
-// ---------- la commande (4-question wizard) ----------
+// ---------- l'ordine (4-question wizard) ----------
 $('#toWizBtn').onclick = () => { syncWizard(); show('#s-q1'); };
 document.querySelectorAll('.back').forEach(b => b.onclick = () => { syncWizard(); show(b.dataset.back); });
 
@@ -721,8 +727,12 @@ function startPlanning(restrictions) {
     const snacks = list.filter(m => m === 'snack').length;
     let s = 0;
     for (const meal of list) {
-      const label = meal === 'snack' && snacks > 1 ? `Snack ${++s}` : MEAL_FR[meal] ?? meal;
-      week.slots.push({ day: d, meal, label });
+      const numbered = meal === 'snack' && snacks > 1 ? ++s : 0;
+      week.slots.push({
+        day: d, meal,
+        it: numbered ? `${MEAL_IT.snack} ${numbered}` : (MEAL_IT[meal] ?? meal),
+        en: numbered ? `${MEAL_EN.snack} ${numbered}` : (MEAL_EN[meal] ?? meal),
+      });
     }
   }
   week.i = 0; week.chosen = []; week.shown = [];
@@ -782,7 +792,10 @@ function makePipelineHandler(feed, doneType, done) {
 
 // ---------- one slot : /api/slotdeck ----------
 function slotLabel(slot, i) {
-  return `Jour ${slot.day} · ${slot.label} — service ${i + 1}/${week.slots.length}`;
+  return {
+    it: `Giorno ${slot.day} · ${slot.it} — Servizio ${i + 1}/${week.slots.length}`,
+    en: `Day ${slot.day} · ${slot.en} — course ${i + 1} of ${week.slots.length}`,
+  };
 }
 async function buildSlot(regen) {
   if (building) return;
@@ -790,7 +803,9 @@ async function buildSlot(regen) {
   lastBuild = () => buildSlot(regen);
   const slot = week.slots[week.i];
   if (!regen) week.shown = [];
-  $('#thinkKicker').textContent = slotLabel(slot, week.i);
+  const lab = slotLabel(slot, week.i);
+  $('#thinkKicker').textContent = lab.it;
+  $('#thinkEcho').textContent = lab.en;
   $('#thinkTitle').textContent = regen ? 'Recomposing the course.' : 'Composing the course.';
   $('#thinkErr').hidden = true;
   show('#s-think');
@@ -804,10 +819,10 @@ async function buildSlot(regen) {
       $('#thinkErr').hidden = false;
       return;
     }
-    feedLine(feed, `Le service est prêt — <b>${cards.length}</b> propositions.`, 'stage');
+    feedLine(feed, `Il servizio è pronto — <b>${cards.length}</b> proposte.`, 'stage');
     deck = cards; deckPos = 0;
     week.shown.push(...cards.map(c => c.name));
-    setLearn(ev.learned, '«' + NBSP + 'Oui locks this course and moves to the next.' + NBSP + '»');
+    setLearn(ev.learned, '«' + NBSP + 'Sì locks the course — the house takes notes.' + NBSP + '»');
     setTimeout(() => { renderDeck(); show('#s-deck'); }, 900);
   });
   try {
@@ -832,11 +847,13 @@ function setLearn(learned, fallback) {
 }
 function renderDeck() {
   const wrap = $('#deckwrap'); wrap.innerHTML = '';
-  $('#deckKicker').textContent = slotLabel(week.slots[week.i], week.i);
+  const lab = slotLabel(week.slots[week.i], week.i);
+  $('#deckKicker').textContent = lab.it;
+  $('#deckEcho').textContent = lab.en;
   const remaining = deck.slice(deckPos);
   const voteOn = remaining.length > 0;
   $('#btnLike').disabled = !voteOn; $('#btnNope').disabled = !voteOn;
-  $('#deckCount').textContent = voteOn ? `Proposition ${deckPos + 1}/${deck.length}` : '';
+  $('#deckCount').textContent = voteOn ? `Proposta ${deckPos + 1}/${deck.length}` : '';
   if (!remaining.length) return;
   remaining.slice(0, 3).reverse().forEach((card, idx, arr) => {
     const isTop = idx === arr.length - 1;
@@ -851,21 +868,21 @@ function renderDeck() {
       : '—';
     const meta = [
       card.cuisine, card.minutes != null ? `${card.minutes}′` : null, card.difficulty,
-      card.servings ? `serves ${card.servings}` : null, card.score != null ? `note ${card.score}` : null,
+      card.servings ? `serves ${card.servings}` : null, card.score != null ? `voto ${card.score}` : null,
     ].filter(Boolean).map(esc).join(' · ') + (card.risky ? ' · <span class="risk">long shot</span>' : '');
     el.innerHTML = `
-      <p class="sheet-kick">${card.chef ? esc(card.chef) + ' · ' : ''}Proposition n° ${deckPos + 1 + depth}</p>
+      <p class="sheet-kick">${card.chef ? esc(card.chef) + ' · ' : ''}Proposta n° ${deckPos + 1 + depth}</p>
       <h3 class="sheet-name">${esc(card.name)}</h3>
       <div class="sheet-rule"></div>
       <p class="sheet-meta">${meta}</p>
       ${card.why_you ? `<p class="sheet-why">«${NBSP}${esc(card.why_you)}${NBSP}»</p>` : ''}
-      <p class="sheet-lab">De votre cuisine</p>
+      <p class="sheet-lab">Dalla tua cucina · from your kitchen</p>
       <p class="sheet-have">${(card.uses ?? []).map(u => esc(u.item)).join(', ') || '—'}</p>
-      ${card.missing?.length ? `<p class="sheet-lab need">Il vous manque</p><p class="sheet-need">${card.missing.map(m => esc(m.item) + (m.essential ? '' : ' <i>(optional)</i>')).join(', ')}</p>` : ''}
-      <p class="sheet-nutri"><span class="micro">Nutrition</span>${nutri}</p>
+      ${card.missing?.length ? `<p class="sheet-lab need">Ti manca <span>· you&rsquo;d need</span></p><p class="sheet-need">${card.missing.map(m => esc(m.item) + (m.essential ? '' : ' <i>(optional)</i>')).join(', ')}</p>` : ''}
+      <p class="sheet-nutri"><span class="micro">Nutrizione</span>${nutri}</p>
       <ol class="steps">${(card.steps ?? []).map(s => `<li>${esc(s)}</li>`).join('')}</ol>
       <button class="textbtn peek">The method ▾</button>
-      <div class="stamp oui">OUI</div><div class="stamp non">NON</div>`;
+      <div class="stamp si">SÌ</div><div class="stamp no">NO</div>`;
     el.querySelector('.peek').onclick = (e) => {
       e.stopPropagation();
       el.classList.toggle('peeking');
@@ -896,8 +913,8 @@ function attachSwipe(el, card) {
     dx = e.clientX - sx;
     const dy = e.clientY - sy;
     el.style.transform = `translate(${dx}px, ${dy * 0.25}px) rotate(${dx / 16}deg)`;
-    el.querySelector('.stamp.oui').style.opacity = Math.max(0, Math.min(1, dx / 80));
-    el.querySelector('.stamp.non').style.opacity = Math.max(0, Math.min(1, -dx / 80));
+    el.querySelector('.stamp.si').style.opacity = Math.max(0, Math.min(1, dx / 80));
+    el.querySelector('.stamp.no').style.opacity = Math.max(0, Math.min(1, -dx / 80));
   });
   el.addEventListener('pointerup', () => {
     if (!dragging) return;
@@ -913,14 +930,14 @@ async function flyOut(el, card, isLike) {
   el.dataset.gone = '1';
   const w = Math.max(window.innerWidth, 480);
   el.classList.add('lift');
-  el.querySelector(isLike ? '.stamp.oui' : '.stamp.non').style.opacity = 1;
+  el.querySelector(isLike ? '.stamp.si' : '.stamp.no').style.opacity = 1;
   el.style.transition = 'transform .45s cubic-bezier(.2,.7,.3,1), opacity .45s';
   el.style.transform = `translate(${isLike ? w : -w}px, -40px) rotate(${isLike ? 18 : -18}deg)`;
   fetch(api('/api/swipe'), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ card, dir: isLike ? 'like' : 'nope' }) })
     .then(r => r.json()).then(j => { if (j.learned) setLearn(j.learned); }).catch(() => {});
   const slot = week.slots[week.i];
   if (isLike) {
-    card.day = slot.day; card.meal = slot.meal; card._label = slot.label;
+    card.day = slot.day; card.meal = slot.meal; card._label = slot.it; card._labelEn = slot.en;
     week.chosen.push(card);
     week.i++;
     setTimeout(() => { week.i < week.slots.length ? buildSlot(false) : showPlan(); }, 420);
@@ -966,7 +983,7 @@ function fetchTaste(boxEl, textEl, subEl) {
     if (line) {
       boxEl.hidden = false;
       textEl.textContent = '«' + NBSP + line + NBSP + '»';
-      if (subEl) subEl.textContent = t.swipes ? `Après ${t.swipes} avis` : '';
+      if (subEl) subEl.textContent = t.swipes ? `Dopo ${t.swipes} assaggi — after ${t.swipes} swipes` : '';
     }
   }).catch(() => {});
 }
@@ -974,7 +991,7 @@ function fetchTaste(boxEl, textEl, subEl) {
 // ---------- the plan ----------
 async function showPlan() {
   show('#s-week');
-  $('#planKicker').textContent = week.days === 1 ? 'Le menu — ce soir' : 'Le menu — la semaine';
+  $('#planKicker').textContent = week.days === 1 ? 'Il menu — stasera' : 'Il menu — la settimana';
   $('#planTitle').textContent = week.days === 1 ? 'Tonight’s menu.' : `The ${week.days === 7 ? 'week' : week.days + '-day'} menu.`;
   const body = $('#weekbody');
   body.innerHTML = '<div class="assembling">Assembling the menu<span class="dots"><span>·</span><span>·</span><span>·</span></span></div>';
@@ -989,36 +1006,36 @@ async function showPlan() {
   for (const day of days) {
     const sec = document.createElement('section');
     sec.className = 'day';
-    sec.innerHTML = `<div class="day-h"><h3 class="day-name">Jour ${day}</h3><span class="day-eaten" data-day="${day}"></span></div>`;
+    sec.innerHTML = `<div class="day-h"><h3 class="day-name">Giorno ${day}</h3><span class="day-eaten" data-day="${day}"></span></div>`;
     const cards = week.chosen.filter(c => c.day === day); // already in slot order
     for (const card of cards) sec.appendChild(mealBlock(card));
     const t = (p.dayTotals ?? []).find(x => Number(x.day) === Number(day));
     if (t) {
       const tot = document.createElement('p');
       tot.className = 'day-tot';
-      tot.innerHTML = `<span class="micro">Total du jour</span>${t.kcal != null ? fmt(t.kcal) : '—'} kcal · P ${rd(t.protein_g)} · C ${rd(t.carbs_g)} · F ${rd(t.fat_g)}`;
+      tot.innerHTML = `<span class="micro">Totale del giorno</span>${t.kcal != null ? fmt(t.kcal) : '—'} kcal · P ${rd(t.protein_g)} · C ${rd(t.carbs_g)} · F ${rd(t.fat_g)}`;
       sec.appendChild(tot);
       const mic = document.createElement('p');
       mic.className = 'day-mic';
-      mic.textContent = `Fibre ${rd(t.fiber_g)} g · Fer ${rd(t.iron_mg)} mg · Sodium ${t.sodium_mg != null ? fmt(t.sodium_mg) : '—'} mg · Vit C ${rd(t.vitc_mg)} mg`;
+      mic.textContent = `Fibra ${rd(t.fiber_g)} g · Ferro ${rd(t.iron_mg)} mg · Sodio ${t.sodium_mg != null ? fmt(t.sodium_mg) : '—'} mg · Vit C ${rd(t.vitc_mg)} mg`;
       sec.appendChild(mic);
     }
     body.appendChild(sec);
   }
   const shopSec = document.createElement('section');
   shopSec.className = 'plansec';
-  shopSec.innerHTML = `<h3 class="plan-h">Les courses <span class="sub">${week.days === 1 ? 'what’s missing' : 'for the whole stretch'}</span></h3><div class="wshop"></div>`;
+  shopSec.innerHTML = '<h3 class="plan-h">La spesa <span class="sub">shopping gaps</span></h3><div class="wshop"></div>';
   renderShopping(shopSec.querySelector('.wshop'), p.shopping);
   body.appendChild(shopSec);
   const tipSec = document.createElement('section');
   tipSec.className = 'plansec';
-  tipSec.innerHTML = '<h3 class="plan-h">Notes de cuisine</h3><div class="wtips"></div>';
+  tipSec.innerHTML = '<h3 class="plan-h">Note di cucina <span class="sub">kitchen notes</span></h3><div class="wtips"></div>';
   body.appendChild(tipSec);
   renderTips(tipSec, tipSec.querySelector('.wtips'), p);
   const learnSec = document.createElement('section');
   learnSec.className = 'plansec';
   learnSec.hidden = true;
-  learnSec.innerHTML = '<h3 class="plan-h">La maison vous connaît</h3><p class="learned"></p><p class="micro"></p>';
+  learnSec.innerHTML = '<h3 class="plan-h">La casa ti conosce <span class="sub">what it knows about you</span></h3><p class="learned"></p><p class="micro"></p>';
   body.appendChild(learnSec);
   fetchTaste(learnSec, learnSec.querySelector('.learned'), learnSec.querySelector('.micro'));
   recalcEaten();
@@ -1029,8 +1046,10 @@ function mealBlock(card) {
   d.className = 'meal';
   const n = card.nutrition;
   const nutri = (n && n.kcal != null) ? `${n.kcal} kcal · P ${n.protein_g ?? '—'} · C ${n.carbs_g ?? '—'} · F ${n.fat_g ?? '—'}` : '—';
+  const labIt = card._label ?? MEAL_IT[card.meal] ?? card.meal;
+  const labEn = card._labelEn ?? MEAL_EN[card.meal] ?? card.meal;
   d.innerHTML = `
-    <p class="meal-lab">${esc(card._label ?? MEAL_FR[card.meal] ?? card.meal)}</p>
+    <p class="meal-lab">${esc(labIt)} · ${esc(labEn)}</p>
     <button class="meal-top"><span class="meal-name">${esc(card.name)}</span><span class="rec-meta">${card.minutes != null ? card.minutes + '′ ' : ''}▾</span></button>
     <ol class="steps">${(card.steps ?? []).map(s => `<li>${esc(s)}</li>`).join('')}</ol>
     <p class="meal-nutri">${nutri}</p>
@@ -1053,7 +1072,7 @@ function mealBlock(card) {
     const key = `${card.day}|${card._label ?? card.meal}|${card.name}`;
     if (eaten.has(key)) return;
     eaten.add(key);
-    ate.textContent = 'Mangé ✓';
+    ate.textContent = 'Mangiato ✓';
     ate.classList.add('ate-done');
     fetch(api('/api/log'), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: card.name, day: card.day, meal: card.meal, action: 'eaten' }) }).catch(() => {});
     recalcEaten();
@@ -1067,7 +1086,7 @@ function recalcEaten() {
     for (const c of week.chosen) {
       if (c.day === day && eaten.has(`${c.day}|${c._label ?? c.meal}|${c.name}`)) { any = true; kcal += c.nutrition?.kcal ?? 0; }
     }
-    el.innerHTML = any ? `Mangé · <b>${fmt(kcal)} kcal</b>` : 'Mangé · 0 kcal';
+    el.innerHTML = any ? `Mangiato · <b>${fmt(kcal)} kcal</b>` : 'Mangiato · 0 kcal';
   });
 }
 $('#newWeekBtn').onclick = () => { syncWizard(); show('#s-q1'); };
@@ -1095,14 +1114,14 @@ window.__seed = (arr) => {
     { name: 'Onion', qty: '2', category: 'produce', freshness: 'fresh', confidence: 1 },
     { name: 'Garlic', qty: '1 head', category: 'produce', freshness: 'fresh', confidence: 1 },
     { name: 'Feta', qty: '150g', category: 'dairy', freshness: 'fresh', confidence: 1 },
-    { name: 'Crème fraîche', qty: '200ml', category: 'dairy', freshness: 'fresh', confidence: 1 },
+    { name: 'Mascarpone', qty: '200g', category: 'dairy', freshness: 'fresh', confidence: 1 },
     { name: 'Milk', qty: '1L', category: 'dairy', freshness: 'fresh', confidence: 1 },
     { name: 'Rice', qty: '1kg', category: 'grain', freshness: 'unknown', confidence: 1 },
     { name: 'Spaghetti', qty: '500g', category: 'grain', freshness: 'unknown', confidence: 1 },
     { name: 'Cumin', qty: '', category: 'spice', freshness: 'unknown', confidence: 1 },
     { name: 'Paprika', qty: '', category: 'spice', freshness: 'unknown', confidence: 1 },
     { name: 'Olive oil', qty: '', category: 'condiment', freshness: 'unknown', confidence: 1 },
-    { name: 'Dijon mustard', qty: '', category: 'condiment', freshness: 'unknown', confidence: 1 },
+    { name: 'Mustard', qty: '', category: 'condiment', freshness: 'unknown', confidence: 1 },
   ];
   renderInv();
   show('#s-inv');

@@ -468,9 +468,12 @@ async function runSlotDeck(body, send) {
       return [];
     }
   }));
-  let candidates = results.flat().filter((r) => r?.name && r.steps?.length)
-    .filter((r) => !exclude.some((x) => norm(x) === norm(r.name)));
-  if (!candidates.length) { send({ type: 'error', message: 'chefs came up empty — try again' }); return; }
+  let candidates = results.flat().filter((r) => r?.name && r.steps?.length);
+  // prefer fresh names, but when the cook has skipped so much that everything collides
+  // with the exclusion list, a near-repeat beats an error screen
+  const fresh = candidates.filter((r) => !exclude.some((x) => norm(x) === norm(r.name)));
+  if (fresh.length) candidates = fresh;
+  if (!candidates.length) { console.error('[slotdeck] zero candidates', { day, meal, exclude: exclude.length }); send({ type: 'error', message: 'chefs came up empty — try again' }); return; }
 
   send({ type: 'stage', id: 'xcheck', label: 'Cross-checking ingredients against your shelf…' });
   candidates = candidates.map((r) => crossCheck(r, items));
@@ -540,6 +543,7 @@ const ndjson = (res) => { res.writeHead(200, { 'content-type': 'application/x-nd
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
+  if (url.pathname.startsWith('/api/')) console.log(`[req] ${req.method} ${url.pathname} from ${req.socket.remoteAddress}`);
   res.setHeader('access-control-allow-origin', '*');
   res.setHeader('access-control-allow-headers', 'content-type');
   if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
