@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "name": "redflag-detection",
+  "entry": "dispatch",
+  "caps": { "maxSteps": 20, "maxSpendUsd": 0.75, "maxLoopBacks": { "authority_agent": 1, "pressure_agent": 1, "money_agent": 1 } },
+  "state": {
+    "fields": [
+      { "name": "window",        "type": "string", "input": true, "description": "rolling transcript window" },
+      { "name": "brief",         "type": "object", "description": "normalised window + prior flags" },
+      { "name": "authorityHits", "type": "array",  "description": "FAKE_AUTHORITY / VERIFICATION_THEATRE" },
+      { "name": "pressureHits",  "type": "array",  "description": "URGENCY / THREAT / ISOLATION" },
+      { "name": "moneyHits",     "type": "array",  "description": "EXTRACTION" },
+      { "name": "allFlags",      "type": "array",  "description": "consolidated, deduped" },
+      { "name": "audit",         "type": "object", "description": "skeptic verdict {passed, rejected}" },
+      { "name": "verdict",       "type": "object", "description": "final ruling" }
+    ]
+  },
+  "nodes": [
+    { "id": "dispatch",        "kind": "produce", "role": "Normalise the window for the specialists.", "reads": ["window"], "writes": ["brief"] },
+    { "id": "authority_agent", "kind": "produce", "role": "Detect impersonated authority and fabricated proof only.", "reads": ["brief"], "writes": ["authorityHits"] },
+    { "id": "pressure_agent",  "kind": "produce", "role": "Detect urgency, threats and isolation only.",              "reads": ["brief"], "writes": ["pressureHits"] },
+    { "id": "money_agent",     "kind": "produce", "role": "Detect money, OTP and remote-access extraction only.",     "reads": ["brief"], "writes": ["moneyHits"] },
+    { "id": "consolidate",     "kind": "join",    "role": "Merge and dedupe specialist findings.",                    "reads": ["authorityHits", "pressureHits", "moneyHits"], "writes": ["allFlags"], "joins": ["authority_agent", "pressure_agent", "money_agent"] },
+    { "id": "skeptic",         "kind": "verify",  "role": "Read-only. Reject any flag not literally quoted, or that describes legitimate business.", "reads": ["allFlags", "window"], "writes": ["audit"] },
+    { "id": "bench",           "kind": "router",  "role": "Re-run specialists if the skeptic rejected evidence.",      "reads": ["audit"], "writes": [] },
+    { "id": "ruling",          "kind": "produce", "role": "Score the surviving flags and issue the verdict.",          "reads": ["allFlags", "audit"], "writes": ["verdict"] }
+  ],
+  "edges": [
+    { "from": "dispatch",        "to": ["authority_agent", "pressure_agent", "money_agent"], "fanOut": true },
+    { "from": "authority_agent", "to": "consolidate" },
+    { "from": "pressure_agent",  "to": "consolidate" },
+    { "from": "money_agent",     "to": "consolidate" },
+    { "from": "consolidate",     "to": "skeptic" },
+    { "from": "skeptic",         "to": "bench" },
+    { "from": "bench",           "to": ["authority_agent", "pressure_agent", "money_agent"], "when": "audit.passed == false", "fanOut": true, "loopBack": true },
+    { "from": "bench",           "to": "ruling", "when": "audit.passed == true" },
+    { "from": "ruling",          "to": "END" }
+  ]
+}

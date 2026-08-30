@@ -9,9 +9,12 @@
   "scripts": {
     "compile": "node src/cli.mjs compile",
     "run": "node src/cli.mjs run",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "serve": "node server/server.mjs",
+    "smoke:ws": "node scripts/smoke-ws.mjs"
   },
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "^0.3.251"
+    "@anthropic-ai/claude-agent-sdk": "^0.3.251",
+    "ws": "^8.21.3"
   }
 }

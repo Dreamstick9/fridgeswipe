@@ -1,0 +1,148 @@
+[
+  {
+    "type": "transcript",
+    "tMs": 4785,
+    "text": "Madam, this is Inspector Rajeev Kumar, CBI Cyber Crime Branch Delhi, badge number 4471.",
+    "final": true
+  },
+  {
+    "type": "flag",
+    "flag": {
+      "id": "f1",
+      "technique": "FAKE_AUTHORITY",
+      "label": "FAKE AUTHORITY",
+      "quote": "Madam, this is Inspector Rajeev Kumar, CBI Cyber Crime Branch Delhi, badge number 4471.",
+      "tMs": 5385,
+      "confidence": 0.95,
+      "tier": 2
+    }
+  },
+  {
+    "type": "risk",
+    "score": 21,
+    "band": "calm"
+  },
+  {
+    "type": "transcript",
+    "tMs": 10505,
+    "text": "A parcel sent in your name was intercepted at Mumbai customs. It contained MDMA and four fake passports.",
+    "final": true
+  },
+  {
+    "type": "transcript",
+    "tMs": 14630,
+    "text": "An FIR has been registered against you under the PMLA money laundering act.",
+    "final": true
+  },
+  {
+    "type": "transcript",
+    "tMs": 18755,
+    "text": "You are under digital arrest from this moment. Do not disconnect this call.",
+    "final": true
+  },
+  {
+    "type": "flag",
+    "flag": {
+      "id": "f5",
+      "technique": "THREAT_ESCALATION",
+      "label": "THREAT",
+      "quote": "You are under digital arrest from this moment. Do not disconnect this call.",
+      "tMs": 19355,
+      "confidence": 0.92,
+      "tier": 2
+    }
+  },
+  {
+    "type": "risk",
+    "score": 37,
+    "band": "caution"
+  },
+  {
+    "type": "transcript",
+    "tMs": 23650,
+    "text": "This is a confidential judicial matter. You must not inform anyone, not even your family.",
+    "final": true
+  },
+  {
+    "type": "flag",
+    "flag": {
+      "id": "f2",
+      "technique": "ISOLATION_ORDER",
+      "label": "ISOLATION ORDER",
+      "quote": "This is a confidential judicial matter. You must not inform anyone, not even your family.",
+      "tMs": 24250,
+      "confidence": 0.96,
+      "tier": 2
+    }
+  },
+  {
+    "type": "risk",
+    "score": 62,
+    "band": "danger"
+  },
+  {
+    "type": "transcript",
+    "tMs": 28710,
+    "text": "To prove your funds are clean you will transfer your balance to the RBI supervision account.",
+    "final": true
+  },
+  {
+    "type": "flag",
+    "flag": {
+      "id": "f3",
+      "technique": "EXTRACTION",
+      "label": "THE ASK",
+      "quote": "To prove your funds are clean you will transfer your balance to the RBI supervision account.",
+      "tMs": 29310,
+      "confidence": 0.94,
+      "tier": 2
+    }
+  },
+  {
+    "type": "risk",
+    "score": 100,
+    "band": "critical"
+  },
+  {
+    "type": "transcript",
+    "tMs": 33000,
+    "text": "If you do not comply within two hours a non-bailable warrant will be executed.",
+    "final": true
+  },
+  {
+    "type": "flag",
+    "flag": {
+      "id": "f4",
+      "technique": "MANUFACTURED_URGENCY",
+      "label": "MANUFACTURED URGENCY",
+      "quote": "If you do not comply within two hours a non-bailable warrant will be executed.",
+      "tMs": 33600,
+      "confidence": 0.93,
+      "tier": 2
+    }
+  },
+  {
+    "type": "risk",
+    "score": 100,
+    "band": "critical"
+  },
+  {
+    "type": "verdict",
+    "scam": true,
+    "confidence": 0.99,
+    "headline": "DIGITAL ARREST SCAM — 100% RISK",
+    "advice": [
+      "Hang up now",
+      "\"Digital arrest\" does not exist in Indian law",
+      "No agency asks you to transfer money to prove it is clean",
+      "Call 1930 — cybercrime helpline"
+    ],
+    "techniques": [
+      "FAKE_AUTHORITY",
+      "ISOLATION_ORDER",
+      "EXTRACTION",
+      "MANUFACTURED_URGENCY",
+      "THREAT_ESCALATION"
+    ]
+  }
+]
