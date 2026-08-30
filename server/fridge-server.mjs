@@ -552,6 +552,25 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { 'content-type': 'text/html' });
       return res.end(readFileSync(path.join(ROOT, 'web', 'fridge', 'index.html')));
     }
+    if (req.method === 'GET' && url.pathname === '/download') {
+      res.writeHead(200, { 'content-type': 'text/html', 'content-disposition': 'attachment; filename="FridgeSwipe.html"' });
+      return res.end(readFileSync(path.join(ROOT, 'web', 'fridge', 'index.html')));
+    }
+    if (req.method === 'GET' && url.pathname === '/manifest.webmanifest') {
+      res.writeHead(200, { 'content-type': 'application/manifest+json' });
+      return res.end(JSON.stringify({
+        name: 'FridgeSwipe', short_name: 'FridgeSwipe', description: 'Dal frigo alla tavola — swipe your way to a week of meals.',
+        start_url: '/', display: 'standalone', background_color: '#F5F1E8', theme_color: '#F5F1E8',
+        icons: [
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+        ],
+      }));
+    }
+    if (req.method === 'GET' && /^\/(icon-192|icon-512|apple-touch-icon)\.png$/.test(url.pathname)) {
+      res.writeHead(200, { 'content-type': 'image/png', 'cache-control': 'public, max-age=3600' });
+      return res.end(readFileSync(path.join(ROOT, 'web', 'fridge', url.pathname.slice(1))));
+    }
     if (req.method === 'GET' && url.pathname === '/api/taste') {
       const t = loadTaste();
       return json(res, 200, { swipes: t.swipes.length, profile: t.profile, learned: learnedLine(t) });
