@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "name": "fanout-join",
+  "entry": "plan",
+  "caps": { "maxSteps": 12, "maxSpendUsd": 1.0, "maxLoopBacks": {} },
+  "state": {
+    "fields": [
+      { "name": "topic",  "type": "string", "input": true },
+      { "name": "plan",   "type": "string" },
+      { "name": "legal",  "type": "string" },
+      { "name": "perf",   "type": "string" },
+      { "name": "sec",    "type": "string" },
+      { "name": "merged", "type": "string" },
+      { "name": "verdict","type": "object" }
+    ]
+  },
+  "nodes": [
+    { "id": "plan",  "kind": "produce", "role": "Plan the review.", "reads": ["topic"], "writes": ["plan"] },
+    { "id": "legal", "kind": "produce", "role": "Legal lens.",      "reads": ["plan"], "writes": ["legal"] },
+    { "id": "perf",  "kind": "produce", "role": "Performance lens.","reads": ["plan"], "writes": ["perf"] },
+    { "id": "sec",   "kind": "produce", "role": "Security lens.",   "reads": ["plan"], "writes": ["sec"] },
+    { "id": "merge", "kind": "join",    "role": "Merge lenses.",    "reads": ["legal","perf","sec"], "writes": ["merged"], "joins": ["legal","perf","sec"] },
+    { "id": "judge", "kind": "verify",  "role": "Judge the merge.", "reads": ["merged"], "writes": ["verdict"] }
+  ],
+  "edges": [
+    { "from": "plan",  "to": ["legal","perf","sec"], "fanOut": true },
+    { "from": "legal", "to": "merge" },
+    { "from": "perf",  "to": "merge" },
+    { "from": "sec",   "to": "merge" },
+    { "from": "merge", "to": "judge" },
+    { "from": "judge", "to": "END" }
+  ]
+}

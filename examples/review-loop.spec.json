@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "name": "review-loop",
+  "entry": "research",
+  "caps": { "maxSteps": 24, "maxSpendUsd": 1.0, "maxLoopBacks": { "write": 3 } },
+  "state": {
+    "fields": [
+      { "name": "brief",    "type": "string", "input": true },
+      { "name": "findings", "type": "string" },
+      { "name": "draft",    "type": "string" },
+      { "name": "verdict",  "type": "object" }
+    ]
+  },
+  "nodes": [
+    { "id": "research", "kind": "produce", "role": "Gather findings for the brief.", "reads": ["brief"], "writes": ["findings"] },
+    { "id": "write",    "kind": "produce", "role": "Draft from findings.",           "reads": ["findings"], "writes": ["draft"] },
+    { "id": "verify",   "kind": "verify",  "role": "Judge the draft. Read-only.",    "reads": ["draft"], "writes": ["verdict"] },
+    { "id": "route",    "kind": "router",  "role": "Ship or send back.",             "reads": ["verdict"], "writes": [] }
+  ],
+  "edges": [
+    { "from": "research", "to": "write" },
+    { "from": "write",    "to": "verify" },
+    { "from": "verify",   "to": "route" },
+    { "from": "route",    "to": "write", "when": "verdict.passed == false", "loopBack": true },
+    { "from": "route",    "to": "END",   "when": "verdict.passed == true" }
+  ]
+}

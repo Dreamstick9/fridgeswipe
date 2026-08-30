@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "name": "broken",
+  "entry": "nope",
+  "caps": { "maxSteps": 0 },
+  "state": { "fields": [ { "name": "draft", "type": "string" } ] },
+  "nodes": [
+    { "id": "write",  "kind": "produce", "role": "w", "reads": ["missingField"], "writes": ["draft"] },
+    { "id": "check",  "kind": "verify",  "role": "v", "reads": [], "writes": ["draft"] },
+    { "id": "orphan", "kind": "produce", "role": "o", "reads": [], "writes": ["draft"] },
+    { "id": "END",    "kind": "router",  "role": "r", "reads": [], "writes": [] }
+  ],
+  "edges": [
+    { "from": "write", "to": "check" },
+    { "from": "check", "to": "write", "when": "draft.ok == maybe(" },
+    { "from": "check", "to": "ghost" }
+  ]
+}

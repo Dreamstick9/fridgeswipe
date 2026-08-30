@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "name": "kangaroo-court",
+  "entry": "clerk",
+  "caps": { "maxSteps": 24, "maxSpendUsd": 1.5, "maxLoopBacks": { "advocate_a": 1, "advocate_b": 1 } },
+  "state": {
+    "fields": [
+      { "name": "caseA",     "type": "object", "input": true,  "description": "side A: name + transcript" },
+      { "name": "caseB",     "type": "object", "input": true,  "description": "side B: name + transcript" },
+      { "name": "docket",    "type": "object", "description": "the clerk's framing of the dispute" },
+      { "name": "argA",      "type": "object", "description": "advocate A's strongest case" },
+      { "name": "argB",      "type": "object", "description": "advocate B's strongest case" },
+      { "name": "record",    "type": "object", "description": "the hearing exchange" },
+      { "name": "objection", "type": "object", "description": "examiner verdict {passed, reasons, weakSide}" },
+      { "name": "verdict",   "type": "object", "description": "the judge's ruling" }
+    ]
+  },
+  "nodes": [
+    { "id": "clerk",      "kind": "produce", "role": "Frame the dispute as formal charges.",            "reads": ["caseA", "caseB"],            "writes": ["docket"] },
+    { "id": "advocate_a", "kind": "produce", "role": "Argue the strongest good-faith case for side A.", "reads": ["docket", "caseA"],           "writes": ["argA"] },
+    { "id": "advocate_b", "kind": "produce", "role": "Argue the strongest good-faith case for side B.", "reads": ["docket", "caseB"],           "writes": ["argB"] },
+    { "id": "hearing",    "kind": "join",    "role": "Stage the courtroom exchange.",                   "reads": ["argA", "argB"],              "writes": ["record"], "joins": ["advocate_a", "advocate_b"] },
+    { "id": "examiner",   "kind": "verify",  "role": "Cross-examine the record for dodges and holes.",  "reads": ["record"],                    "writes": ["objection"] },
+    { "id": "bench",      "kind": "router",  "role": "Sustain the objection or proceed to judgment.",   "reads": ["objection"],                 "writes": [] },
+    { "id": "judge",      "kind": "produce", "role": "Deliver the final theatrical verdict.",           "reads": ["docket", "record", "objection"], "writes": ["verdict"] }
+  ],
+  "edges": [
+    { "from": "clerk",      "to": ["advocate_a", "advocate_b"], "fanOut": true },
+    { "from": "advocate_a", "to": "hearing" },
+    { "from": "advocate_b", "to": "hearing" },
+    { "from": "hearing",    "to": "examiner" },
+    { "from": "examiner",   "to": "bench" },
+    { "from": "bench",      "to": ["advocate_a", "advocate_b"], "when": "objection.passed == false", "fanOut": true, "loopBack": true },
+    { "from": "bench",      "to": "judge",                      "when": "objection.passed == true" },
+    { "from": "judge",      "to": "END" }
+  ]
+}
