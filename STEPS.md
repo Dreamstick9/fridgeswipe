@@ -19,13 +19,15 @@ Truecaller tells you *who* is calling. **Nobody tells you what they are doing to
 | 5 | The detector | Reads a transcript, names the tricks, quotes the proof | ✅ |
 | 6 | **Safety gate** | Catches 100% of scams, flags 0% of honest calls | ✅ **PASSED** |
 | 7 | Multi-agent graph | 3 specialists in parallel + a skeptic that rejects bad evidence | ✅ |
-| 8 | Live server | Streams flags to the phone as the call happens | 🤖 Codex |
-| 9 | Basic app | Transcript, flags, risk meter, verdict | 🤖 Codex |
-| 10 | Microphone | Real speech → live detection, on-device | ⏳ |
-| 11 | Make it beautiful | Dark, tense, one screen, motion | ⏳ |
-| 12 | Demo-proof it | Works with wifi OFF. Rehearse twice | ⏳ |
+| 8 | Live server | Streams flags to the phone; /health + keepalive + CORS | ✅ |
+| 9 | The app | Call sheet → listen → verdict → intervene/coach → aftercare | ✅ |
+| 10 | Microphone | 4s chunks → Groq Whisper → live detection | ✅ wired |
+| 11 | Make it beautiful | All 5 screens visually verified, dark forensic design | ✅ |
+| 12 | Voice intervention | ElevenLabs "LET ME SPEAK" audio, bundled offline | ✅ |
+| 13 | Demo-proof it | Offline replay from real detector output; wifi-off rehearsal | ⏳ last |
 
-**Right now: 38/38 tests passing. ₹0 spent** (all free Groq + NVIDIA credits).
+**Right now: 38/38 tests passing · 3 Codex agents shipped gated modules · every server route
+tested against the real APIs · all 5 app screens walked and screenshotted. ₹0 spent.**
 
 ---
 
