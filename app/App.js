@@ -10,6 +10,7 @@ import DEMO_EVENTS from './demoEvents.json';
 let useAudioPlayer = null, useAudioRecorder = null, RecordingPresets = null, AudioModule = null;
 try { ({ useAudioPlayer, useAudioRecorder, RecordingPresets, AudioModule } = require('expo-audio')); } catch {}
 
+const SHOW_VOICE = false;   // ElevenLabs intervention parked for now
 const LAN = '10.10.29.28';
 const PORT = 8787;
 const CALLER = '+91 98214 40071';
@@ -79,14 +80,15 @@ function RiskMeter({ score, band }) {
 }
 
 /** The slide-up that asks permission. Nothing is heard until this is answered. */
-function CallSheet({ onYes, onNo }) {
+function CallSheet({ onYes, onNo, heard }) {
   const a = useRef(new Animated.Value(0)).current;
   useEffect(() => { Animated.spring(a, { toValue: 1, tension: 60, friction: 10, useNativeDriver: true }).start(); }, []);
   return (
     <Animated.View style={[styles.sheet, { transform: [{ translateY: a.interpolate({ inputRange: [0, 1], outputRange: [340, 0] }) }] }]}>
       <View style={styles.sheetGrip} />
-      <Text style={styles.sheetKicker}>INCOMING CALL</Text>
-      <Text style={styles.sheetNumber}>{CALLER}</Text>
+      <Text style={styles.sheetKicker}>{heard ? 'CALL DETECTED' : 'INCOMING CALL'}</Text>
+      <Text style={styles.sheetNumber}>{heard ? 'I can hear a conversation' : CALLER}</Text>
+      {heard ? <Text style={styles.sheetHeard}>“…{heard.slice(-80)}”</Text> : null}
       <Text style={styles.sheetAsk}>Want me to listen in?</Text>
       <Text style={styles.sheetNote}>I stay silent. Nothing is recorded or uploaded.</Text>
       <Pressable onPress={onYes} style={styles.sheetPrimary}><Text style={styles.sheetPrimaryText}>YES, LISTEN</Text></Pressable>
@@ -96,7 +98,9 @@ function CallSheet({ onYes, onNo }) {
 }
 
 export default function App() {
-  const [stage, setStage] = useState('idle');   // idle|incoming|listening|choose|speaking|coach|after
+  const [stage, setStage] = useState('idle');   // idle|armed|incoming|listening|choose|speaking|coach|after
+  const stageRef = useRef('idle');
+  const heardRef = useRef('');
   const [flags, setFlags] = useState([]);
   const [lines, setLines] = useState([]);
   const [risk, setRisk] = useState({ score: 0, band: 'calm' });
@@ -109,6 +113,7 @@ export default function App() {
 
   const player = useAudioPlayer ? useAudioPlayer(require('./assets/audio/intervene.mp3')) : null;
   const recorder = useAudioRecorder && RecordingPresets ? useAudioRecorder(RecordingPresets.HIGH_QUALITY) : null;
+  const recActive = useRef(false);
   const liveLoop = useRef(false);
   const callT0 = useRef(0);
 
@@ -125,8 +130,10 @@ export default function App() {
       try {
         await recorder.prepareToRecordAsync();
         recorder.record();
+        recActive.current = true;
         await new Promise((r) => setTimeout(r, 4000));
         await recorder.stop();
+        recActive.current = false;
         const uri = recorder.uri;
         if (!uri || !liveLoop.current) break;
         const audio = await fetch(uri).then((r) => r.blob());
@@ -142,8 +149,17 @@ export default function App() {
   const clearTimers = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   const reset = () => { setFlags([]); setLines([]); setRisk({ score: 0, band: 'calm' }); setVerdict(null); setErr(null); };
 
+  useEffect(() => { stageRef.current = stage; }, [stage]);
+
   const apply = useCallback((ev) => {
-    if (ev.type === 'transcript') setLines((l) => [...l.slice(-40), ev]);
+    if (ev.type === 'transcript') {
+      setLines((l) => [...l.slice(-40), ev]);
+      // ARMED: the first real words we hear ARE the "incoming call" signal.
+      if (stageRef.current === 'armed' && ev.text && ev.text.trim().split(/\s+/).length >= 3) {
+        heardRef.current = ev.text;
+        setStage('incoming');
+      }
+    }
     else if (ev.type === 'flag') setFlags((f) => (f.some((x) => x.technique === ev.flag.technique) ? f : [...f, ev.flag]));
     else if (ev.type === 'risk') setRisk({ score: ev.score, band: ev.band });
     else if (ev.type === 'verdict') { setVerdict(ev); setStage(ev.scam ? 'choose' : 'after'); }
@@ -154,6 +170,17 @@ export default function App() {
     clearTimers(); reset(); setStage('listening');
     const t0 = DEMO_EVENTS[0]?.tMs ?? 0;
     DEMO_EVENTS.forEach((ev) => timers.current.push(setTimeout(() => apply(ev), Math.max(0, (ev.tMs ?? t0) - t0))));
+  };
+
+  const arm = () => {
+    clearTimers(); reset(); setStage('armed');
+    try {
+      const sock = new WebSocket(`ws://${LAN}:${PORT}`);
+      ws.current = sock;
+      sock.onmessage = (m) => { try { apply(JSON.parse(m.data)); } catch {} };
+      sock.onerror = () => { liveLoop.current = false; setErr('server unreachable — demo replay available via long-press'); setStage('idle'); };
+      sock.onopen = () => micLoop(sock);
+    } catch { setErr('websocket unavailable'); setStage('idle'); }
   };
 
   const runLive = () => {
@@ -167,8 +194,10 @@ export default function App() {
     } catch { runReplay(); }
   };
 
-  // Answering YES prefers live analysis when the server is up, otherwise the offline replay.
+  // Answering YES: if we were armed, the pipeline is already running — just reveal it.
+  // Otherwise (simulated call) prefer live when the server is up, else offline replay.
   const answerYes = async () => {
+    if (ws.current && ws.current.readyState === 1 && liveLoop.current) { setStage('listening'); return; }
     try {
       const ctl = new AbortController();
       const t = setTimeout(() => ctl.abort(), 800);
@@ -179,17 +208,25 @@ export default function App() {
     runReplay();
   };
 
+  const answerNo = () => {
+    liveLoop.current = false;
+    if (recActive.current) { try { recorder?.stop(); } catch {} recActive.current = false; }
+    if (ws.current) { try { ws.current.close(); } catch {} ws.current = null; }
+    clearTimers(); reset(); setStage('idle');
+  };
+
   const hangUp = () => {
+    if (stage === 'armed') { answerNo(); return; }
     // In a live call the first tap asks for the verdict; the socket's verdict event moves the stage on.
     if (stage === 'listening' && ws.current && ws.current.readyState === 1 && liveLoop.current) {
       liveLoop.current = false;
-      try { recorder?.stop(); } catch {}
+      if (recActive.current) { try { recorder?.stop(); } catch {} recActive.current = false; }
       try { ws.current.send(JSON.stringify({ type: 'end' })); } catch {}
       timers.current.push(setTimeout(() => { if (ws.current) { try { ws.current.close(); } catch {} ws.current = null; setStage('idle'); } }, 8000));
       return;
     }
     liveLoop.current = false;
-    try { recorder?.stop(); } catch {}
+    if (recActive.current) { try { recorder?.stop(); } catch {} recActive.current = false; }
     clearTimers();
     if (ws.current) { try { ws.current.close(); } catch {} ws.current = null; }
     setStage('idle'); reset();
@@ -229,6 +266,17 @@ export default function App() {
       <ScrollView ref={scroller} style={styles.feed} contentContainerStyle={styles.feedInner}
         onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: true })}>
 
+        {stage === 'armed' && (
+          <Animated.View style={{ opacity: fade, paddingTop: 24 }}>
+            <Text style={styles.emptyBig}>Armed. Waiting for the call.</Text>
+            <Text style={styles.emptySub}>
+              Answer on speaker and keep this screen open. The moment I hear a
+              conversation, I'll ask before I start flagging.
+            </Text>
+            <Text style={styles.emptyHint}>listening for speech…</Text>
+          </Animated.View>
+        )}
+
         {stage === 'idle' && (
           <Animated.View style={{ opacity: fade, paddingTop: 24 }}>
             <Text style={styles.emptyBig}>Watching for calls.</Text>
@@ -236,7 +284,7 @@ export default function App() {
               When one arrives I ask before I listen. Then I name the manipulation as it
               happens — and quote their exact words back to you.
             </Text>
-            <Text style={styles.emptyHint}>tap to simulate an incoming call</Text>
+            <Text style={styles.emptyHint}>tap ARM before a risky call · long-press for demo replay</Text>
           </Animated.View>
         )}
 
@@ -249,11 +297,13 @@ export default function App() {
               <Text style={styles.verdictSub}>{verdict.techniques?.length ?? 0} manipulation techniques confirmed</Text>
             </View>
             <Text style={styles.chooseAsk}>How do you want to end this?</Text>
-            <Pressable onPress={intervene} style={styles.choiceLoud}>
-              <Text style={styles.choiceLoudTitle}>🔊  LET ME SPEAK</Text>
-              <Text style={styles.choiceLoudSub}>I cut in on the call and tell them we know</Text>
-            </Pressable>
-            <Pressable onPress={() => setStage('coach')} style={styles.choiceQuiet}>
+            {SHOW_VOICE && (
+              <Pressable onPress={intervene} style={styles.choiceLoud}>
+                <Text style={styles.choiceLoudTitle}>🔊  LET ME SPEAK</Text>
+                <Text style={styles.choiceLoudSub}>I cut in on the call and tell them we know</Text>
+              </Pressable>
+            )}
+            <Pressable onPress={() => setStage('coach')} style={[styles.choiceQuiet, !SHOW_VOICE && styles.choicePrimary]}>
               <Text style={styles.choiceQuietTitle}>💬  TELL ME WHAT TO SAY</Text>
               <Text style={styles.choiceQuietSub}>I stay silent. You read the words.</Text>
             </Pressable>
@@ -318,18 +368,18 @@ export default function App() {
       </ScrollView>
 
       {stage === 'incoming' ? (
-        <CallSheet onYes={answerYes} onNo={() => setStage('idle')} />
+        <CallSheet onYes={answerYes} onNo={answerNo} heard={heardRef.current} />
       ) : (
         <Pressable
-          onPress={() => (stage === 'idle' ? setStage('incoming') : hangUp())}
-          onLongPress={runLive}
+          onPress={() => (stage === 'idle' ? arm() : hangUp())}
+          onLongPress={() => (stage === 'idle' ? runReplay() : hangUp())}
           delayLongPress={600}
           style={({ pressed }) => [styles.button,
             { backgroundColor: stage === 'idle' ? accent : '#16171d', borderColor: stage === 'idle' ? 'transparent' : accent },
             pressed && { opacity: 0.85 }]}
         >
           <Text style={[styles.buttonText, { color: stage === 'idle' ? '#08080b' : accent }]}>
-            {stage === 'idle' ? 'SIMULATE CALL' : stage === 'after' ? 'DONE' : 'HANG UP'}
+            {stage === 'idle' ? 'ARM' : stage === 'armed' ? 'DISARM' : stage === 'listening' ? 'GET VERDICT' : stage === 'after' ? 'DONE' : 'HANG UP'}
           </Text>
         </Pressable>
       )}
@@ -375,6 +425,7 @@ const styles = StyleSheet.create({
   choiceLoudTitle: { color: '#fff', fontSize: 17, fontWeight: '800', letterSpacing: 1 },
   choiceLoudSub: { color: '#ffd4d4', fontSize: 13, marginTop: 5 },
   choiceQuiet: { backgroundColor: '#101117', borderWidth: 1, borderColor: '#23252e', borderRadius: 12, padding: 18, marginBottom: 11 },
+  choicePrimary: { backgroundColor: '#ff2d2d', borderColor: '#ff2d2d' },
   choiceQuietTitle: { color: '#e8e8ec', fontSize: 17, fontWeight: '700', letterSpacing: 0.6 },
   choiceQuietSub: { color: '#6b7080', fontSize: 13, marginTop: 5 },
 
@@ -400,6 +451,7 @@ const styles = StyleSheet.create({
   sheetKicker: { color: '#5b6070', fontSize: 11, fontWeight: '800', letterSpacing: 2 },
   sheetNumber: { color: '#f4f4f6', fontSize: 25, fontWeight: '700', marginTop: 5 },
   sheetAsk: { color: '#e8e8ec', fontSize: 19, marginTop: 18, fontWeight: '600' },
+  sheetHeard: { color: '#8a8f9e', fontSize: 14, marginTop: 10, fontStyle: 'italic', lineHeight: 20 },
   sheetNote: { color: '#5b6070', fontSize: 13, marginTop: 6, lineHeight: 19 },
   sheetPrimary: { backgroundColor: '#ff2d2d', borderRadius: 30, height: 56, alignItems: 'center', justifyContent: 'center', marginTop: 20 },
   sheetPrimaryText: { color: '#fff', fontSize: 16, fontWeight: '800', letterSpacing: 2 },
