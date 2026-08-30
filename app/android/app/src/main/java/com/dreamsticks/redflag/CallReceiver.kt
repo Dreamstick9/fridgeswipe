@@ -32,6 +32,10 @@ class CallReceiver : BroadcastReceiver() {
     when (state) {
       TelephonyManager.EXTRA_STATE_RINGING, TelephonyManager.EXTRA_STATE_OFFHOOK -> {
         ensureChannel(nm)
+        context.getSharedPreferences("redflag", Context.MODE_PRIVATE).edit()
+          .putBoolean("callActive", true)
+          .putLong("callActiveTimestamp", System.currentTimeMillis())
+          .apply()
 
         val yesIntent = Intent(Intent.ACTION_VIEW, Uri.parse("redflag://arm")).apply {
           setPackage(context.packageName)
@@ -64,7 +68,37 @@ class CallReceiver : BroadcastReceiver() {
           .build()
         nm.notify(NOTIF_ID, n)
       }
-      TelephonyManager.EXTRA_STATE_IDLE -> nm.cancel(NOTIF_ID)
+      TelephonyManager.EXTRA_STATE_IDLE -> {
+        nm.cancel(NOTIF_ID)
+
+        val prefs = context.getSharedPreferences("redflag", Context.MODE_PRIVATE)
+        val callActive = prefs.getBoolean("callActive", false)
+        val callActiveTimestamp = prefs.getLong("callActiveTimestamp", 0L)
+        val elapsed = System.currentTimeMillis() - callActiveTimestamp
+        val withinLastThirtyMinutes = elapsed in 0L..CALL_ACTIVE_TIMEOUT_MS
+        prefs.edit().putBoolean("callActive", false).remove("callActiveTimestamp").apply()
+
+        if (callActive && withinLastThirtyMinutes) {
+          ensureChannel(nm)
+          val reportIntent = Intent(Intent.ACTION_VIEW, Uri.parse("redflag://report")).apply {
+            setPackage(context.packageName)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+          }
+          val report = PendingIntent.getActivity(
+            context, 4713, reportIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+          )
+          val reportNotification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setContentTitle("📋 Call ended — your report is ready")
+            .setContentText("Tap to see whether action is needed.")
+            .setContentIntent(report)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+          nm.notify(REPORT_NOTIF_ID, reportNotification)
+        }
+      }
     }
   }
 
@@ -82,6 +116,8 @@ class CallReceiver : BroadcastReceiver() {
   companion object {
     const val CHANNEL_ID = "redflag-call"
     const val NOTIF_ID = 4711
+    const val REPORT_NOTIF_ID = 4713
+    const val CALL_ACTIVE_TIMEOUT_MS = 30 * 60 * 1000L
     const val ACTION_DISMISS = "com.dreamsticks.redflag.DISMISS_CALL_PROMPT"
   }
 }

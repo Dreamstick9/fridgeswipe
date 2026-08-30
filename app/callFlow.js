@@ -10,6 +10,12 @@ export function shouldAutoArm(url) {
   } catch { return false; }
 }
 
+/** Post-call report deep link from the native receiver. */
+export function shouldShowReport(url) {
+  if (typeof url !== 'string') return false;
+  return url.trim().toLowerCase().startsWith('redflag://report');
+}
+
 /** Map an incoming server event to a notification payload, or null for silence.
  *  Only tier-2 (agent-confirmed) flags and verdicts notify — tier-1 stays on screen. */
 export function notificationFor(ev) {

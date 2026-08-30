@@ -12,7 +12,7 @@ const src = readFileSync(new URL('../app/callFlow.js', import.meta.url), 'utf8')
 const dir = mkdtempSync(join(tmpdir(), 'cf-'));
 const mod = join(dir, 'callFlow.mjs');
 writeFileSync(mod, src);
-const { shouldAutoArm, notificationFor, agentReducer, AGENT_LABELS } = await import(mod);
+const { shouldAutoArm, shouldShowReport, notificationFor, agentReducer, AGENT_LABELS } = await import(mod);
 
 test('the native receiver deep link arms; everything else does not', () => {
   assert.equal(shouldAutoArm('redflag://arm'), true);
@@ -24,6 +24,13 @@ test('the native receiver deep link arms; everything else does not', () => {
   assert.equal(shouldAutoArm(null), false);
   assert.equal(shouldAutoArm(undefined), false);
   assert.equal(shouldAutoArm(42), false);
+});
+
+test('the report deep link is recognized; arm link is not confused with it', () => {
+  assert.equal(shouldShowReport('redflag://report'), true);
+  assert.equal(shouldShowReport('REDFLAG://REPORT?src=n'), true);
+  assert.equal(shouldShowReport('redflag://arm'), false);
+  assert.equal(shouldShowReport(null), false);
 });
 
 test('only agent-confirmed flags and verdicts notify — tier-1 and agent chatter stay silent', () => {

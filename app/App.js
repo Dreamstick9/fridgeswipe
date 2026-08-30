@@ -13,7 +13,7 @@ try { ({ useAudioPlayer, useAudioRecorder, RecordingPresets, requestRecordingPer
 let Notifications = null, Linking = null;
 try { Notifications = require('expo-notifications'); } catch {}
 try { Linking = require('expo-linking'); } catch {}
-import { shouldAutoArm, notificationFor, agentReducer, AGENT_LABELS } from './callFlow';
+import { shouldAutoArm, shouldShowReport, notificationFor, agentReducer, AGENT_LABELS } from './callFlow';
 
 const SHOW_VOICE = true;    // ElevenLabs intervention ON — plays through speaker, scammer hears it
 const PORT = 8787;
@@ -227,12 +227,13 @@ export default function App() {
       try {
         const initial = await Linking.getInitialURL();
         if (shouldAutoArm(initial) && stageRef.current === 'idle') arm();
+        else if (shouldShowReport(initial) && stageRef.current === 'listening') hangUp();
       } catch {}
       try {
         sub = Linking.addEventListener('url', ({ url }) => {
-          if (shouldAutoArm(url) && (stageRef.current === 'idle' || stageRef.current === 'armed')) {
-            if (stageRef.current === 'idle') arm();
-          }
+          if (shouldAutoArm(url) && stageRef.current === 'idle') arm();
+          else if (shouldShowReport(url) && stageRef.current === 'listening') hangUp();
+          // choose/coach/after screens already ARE the report — leave them be
         });
       } catch {}
     })();
