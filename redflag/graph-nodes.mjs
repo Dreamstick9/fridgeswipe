@@ -15,6 +15,7 @@ ${owned.map((id) => `- ${id}: ${TECHNIQUES[id].desc}`).join('\n')}
 Reply with JSON only: {"flags":[{"technique":"<one of the above>","quote":"<exact words copied from the transcript>","confidence":<0.0-1.0>}]}
 
 - Copy "quote" character-for-character. Never paraphrase or invent.
+- The transcript may be in ANY language (Hindi, Hinglish, English, mixed). Judge the MEANING; copy quotes verbatim in their original language/script.
 - Legitimate business is NOT a scam. A real officer who demands no money, no secrecy and no
   haste, and invites verification, is legitimate — flag nothing.
 - If none of your techniques are present, reply {"flags":[]}.`;

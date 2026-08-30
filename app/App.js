@@ -15,7 +15,7 @@ try { Notifications = require('expo-notifications'); } catch {}
 try { Linking = require('expo-linking'); } catch {}
 import { shouldAutoArm, notificationFor, agentReducer, AGENT_LABELS } from './callFlow';
 
-const SHOW_VOICE = false;   // ElevenLabs intervention parked for now
+const SHOW_VOICE = true;    // ElevenLabs intervention ON — plays through speaker, scammer hears it
 const PORT = 8787;
 // The analysis server lives on the same machine as Metro — derive its host from
 // wherever this bundle was actually loaded, so changing networks needs no code edit.

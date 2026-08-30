@@ -19,7 +19,6 @@ export async function transcribe(
     const form = new FormData();
     form.append('file', new Blob([buffer]), filename);
     form.append('model', MODEL);
-    form.append('language', 'en');
     form.append('response_format', 'json');
     form.append('temperature', '0');
 

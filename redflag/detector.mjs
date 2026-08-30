@@ -51,6 +51,7 @@ WHY: real officials DO identify themselves. This one demands no secrecy, no mone
 
 RULES:
 - Copy "quote" character-for-character from the transcript. Never paraphrase or invent.
+- The transcript may be in ANY language (Hindi, Hinglish, English, mixed). Judge the MEANING; copy quotes verbatim in their original language/script.
 - Legitimate business is NOT a scam. Banks verify transactions. Couriers call about deliveries.
   Police do routine passport verification. Warning someone NOT to share an OTP is good advice.
 - THE AUTHORITY TEST: claiming to be police/CBI/RBI/TRAI is only FAKE_AUTHORITY when it is
