@@ -12,7 +12,9 @@
     "test": "node --test tests/*.test.mjs",
     "serve": "node server/server.mjs",
     "smoke:ws": "node scripts/smoke-ws.mjs",
-    "smoke:stt": "node scripts/smoke-transcribe.mjs"
+    "smoke:stt": "node scripts/smoke-transcribe.mjs",
+    "smoke:realcall": "node scripts/smoke-realcall.mjs",
+    "bench:improv": "node scripts/improv-bench.mjs"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.3.251",
